@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmer la suppression - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { max-width: 480px; margin: 0 auto; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #F1EFE9; text-align: center; }
+        h1 { font-size: 24px; font-weight: 800; margin-bottom: 15px; color: var(--color-night); }
+        p { color: #555; margin-bottom: 25px; font-size: 16px; line-height: 1.5; }
+        .highlight { color: var(--color-earth); font-weight: 700; }
+        .btn-group { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 14px 28px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; font-family: 'Outfit'; }
+        .btn-cancel { background: #F1EFE9; color: var(--color-night); }
+        .btn-cancel:hover { background: #E2DFD6; }
+        .btn-delete { background: #D32F2F; color: white; }
+        .btn-delete:hover { background: #B71C1C; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>⚠️ Confirmer la suppression</h1>
+            <p>Voulez-vous vraiment supprimer ce <span class="highlight">{{ type }}</span> ?<br>
+            {% if type == "Trajet" %}
+            <strong>{{ object.ville_depart }} → {{ object.ville_arrivee }}</strong> ({{ object.date_depart|date:"d/m/Y H:i" }})
+            {% else %}
+            <strong>{{ object.ville_depart }} → {{ object.ville_arrivee }}</strong> ({{ object.date_voyage|date:"d/m/Y" }})
+            {% endif %}
+            </p>
+            <div class="btn-group">
+                <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                {% if type == "Trajet" %}
+                <form method="POST" action="{% url 'covoiturage:delete_voyage' object.id %}" style="display:inline;">
+                {% else %}
+                <form method="POST" action="{% url 'covoiturage:delete_demande' object.id %}" style="display:inline;">
+                {% endif %}
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-delete">Oui, supprimer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

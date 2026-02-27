@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposer un trajet - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 40px 20px; }
+        
+        .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); width: 100%; max-width: 650px; position: relative; }
+        h2 { font-size: 32px; font-weight: 800; margin-bottom: 10px; color: var(--color-night); }
+        p.subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
+
+        .form-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .form-group { flex: 1; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--color-night); }
+
+        input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], select {
+            width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px;
+            font-family: 'Outfit', sans-serif; background-color: #FAFAFA; transition: all 0.3s ease; color: var(--color-night); appearance: none;
+        }
+
+        select {
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%231A1A1A%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat; background-position: right 15px top 50%; background-size: 12px auto;
+        }
+
+        input:focus, select:focus { outline: none; border-color: var(--color-earth); background-color: white; box-shadow: 0 0 0 4px rgba(217, 93, 57, 0.1); }
+        input[type="text"]:disabled { background-color: #EBE5D9; cursor: not-allowed; opacity: 0.7; }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
+        .btn { flex: 1; padding: 16px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.3s ease; }
+        .btn-cancel { background-color: #F1EFE9; color: var(--color-night); }
+        .btn-cancel:hover { background-color: #E2DFD6; }
+        .btn-submit { background-color: var(--color-earth); color: white; box-shadow: 0 10px 20px rgba(217, 93, 57, 0.2); }
+        .btn-submit:hover { background-color: #A64426; transform: translateY(-2px); box-shadow: 0 12px 25px rgba(217, 93, 57, 0.3); }
+
+        /* NOUVEAU STYLE POUR AFFICHER LES ERREURS DJANGO CLAIREMENT */
+        .error-box { background: #FDECEA; border-left: 4px solid #D32F2F; padding: 15px; margin-bottom: 20px; border-radius: 6px; }
+        .error-box ul { margin-left: 20px; color: #D32F2F; font-weight: 600; font-size: 14px; }
+        ul.errorlist { color: #D32F2F; font-size: 13px; font-weight: 600; list-style: none; margin-top: 5px; padding-left: 0; }
+        .field-error input, .field-error select { border-color: #D32F2F !important; background-color: #FFFAFA !important; }
+
+        @media (max-width: 600px) { .form-row { flex-direction: column; gap: 0; } .form-group { margin-bottom: 20px; } .btn-group { flex-direction: column; } }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Publier un trajet 🚗</h2>
+        <p class="subtitle">Où allez-vous ? Choisissez d'abord le pays, puis la ville.</p>
+
+        <!-- Affichage des erreurs globales du formulaire (ex: dates incompatibles) -->
+        {% if form.non_field_errors %}
+        <div class="error-box">
+            <ul>
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pays_depart">Pays de départ</label>
+                    <select id="pays_depart"><option value="">Sélectionnez un pays</option></select>
+                </div>
+                <!-- Ajout de classe "field-error" si erreur sur ce champ -->
+                <div class="form-group {% if form.ville_depart.errors %}field-error{% endif %}">
+                    <label for="id_ville_depart">Ville de départ</label>
+                    {{ form.ville_depart }}
+                    <datalist id="list_depart"></datalist>
+                    {{ form.ville_depart.errors }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group {% if form.lieu_ramassage.errors %}field-error{% endif %}" style="width: 100%;">
+                    <label for="id_lieu_ramassage">Lieu de ramassage précis</label>
+                    {{ form.lieu_ramassage }}
+                    {{ form.lieu_ramassage.errors }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pays_arrivee">Pays d'arrivée</label>
+                    <select id="pays_arrivee"><option value="">Sélectionnez un pays</option></select>
+                </div>
+                <div class="form-group {% if form.ville_arrivee.errors %}field-error{% endif %}">
+                    <label for="id_ville_arrivee">Ville d'arrivée</label>
+                    {{ form.ville_arrivee }}
+                    <datalist id="list_arrivee"></datalist>
+                    {{ form.ville_arrivee.errors }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group {% if form.date_depart.errors %}field-error{% endif %}">
+                    <label for="id_date_depart">Date et Heure de départ</label>
+                    {{ form.date_depart }}
+                    {{ form.date_depart.errors }}
+                </div>
+                <div class="form-group {% if form.date_arrivee.errors %}field-error{% endif %}">
+                    <label for="id_date_arrivee">Date et Heure d'arrivée prévue</label>
+                    {{ form.date_arrivee }}
+                    {{ form.date_arrivee.errors }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group {% if form.places_disponibles.errors %}field-error{% endif %}">
+                    <label for="id_places_disponibles">Places libres</label>
+                    {{ form.places_disponibles }}
+                    {{ form.places_disponibles.errors }}
+                </div>
+                <div class="form-group {% if form.prix_par_place.errors %}field-error{% endif %}">
+                    <label for="id_prix_par_place">Prix par place (FCFA)</label>
+                    {{ form.prix_par_place }}
+                    {{ form.prix_par_place.errors }}
+                </div>
+            </div>
+
+            <div class="form-row" style="border-top: 1px solid #EBE5D9; padding-top: 20px; margin-top: 10px;">
+                <div class="form-group {% if form.plaque_immatriculation.errors %}field-error{% endif %}">
+                    <label for="id_plaque_immatriculation">Plaque d'immatriculation</label>
+                    {{ form.plaque_immatriculation }}
+                    {{ form.plaque_immatriculation.errors }}
+                </div>
+                <div class="form-group {% if form.modele_voiture.errors %}field-error{% endif %}">
+                    <label for="id_modele_voiture">Modèle du véhicule</label>
+                    {{ form.modele_voiture }}
+                    {{ form.modele_voiture.errors }}
+                </div>
+                <div class="form-group {% if form.type_bagage_accepte.errors %}field-error{% endif %}">
+                    <label for="id_type_bagage_accepte">Bagage accepté</label>
+                    {{ form.type_bagage_accepte }}
+                    {{ form.type_bagage_accepte.errors }}
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                <button type="submit" class="btn btn-submit">Publier le trajet</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SCRIPT DYNAMIQUE PAYS -> VILLE -->
+    <script>
+        const dataAfrique = {
+            "Cameroun": ["Douala", "Yaoundé", "Bafoussam", "Bamenda", "Garoua", "Maroua", "Ngaoundéré", "Kribi", "Limbe", "Dschang", "Edea", "Kumba", "Foumban", "Bertoua"],
+            "Côte d'Ivoire": ["Abidjan", "Bouaké", "Yamoussoukro", "Korhogo", "San-Pédro", "Daloa", "Man", "Danane", "Gagnoa"],
+            "Sénégal": ["Dakar", "Thiès", "Saint-Louis", "Ziguinchor", "Touba", "Kaolack", "Mbour", "Rufisque"],
+            "Mali": ["Bamako", "Sikasso", "Mopti", "Koutiala", "Ségou", "Kayes", "Gao"],
+            "Burkina Faso": ["Ouagadougou", "Bobo-Dioulasso", "Koudougou", "Banfora", "Ouahigouya"],
+            "Togo": ["Lomé", "Sokodé", "Kara", "Kpalimé", "Atakpamé"],
+            "Bénin": ["Cotonou", "Porto-Novo", "Parakou", "Djougou", "Bohicon"],
+            "Gabon": ["Libreville", "Port-Gentil", "Franceville", "Oyem", "Moanda"],
+            "Congo": ["Brazzaville", "Pointe-Noire", "Dolisie", "Nkayi"],
+            "RDC": ["Kinshasa", "Lubumbashi", "Mbuji-Mayi", "Goma", "Kisangani"],
+            "Guinée": ["Conakry", "Nzérékoré", "Kankan", "Kindia", "Labé"]
+        };
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const selectPaysDepart = document.getElementById("pays_depart");
+            const selectPaysArrivee = document.getElementById("pays_arrivee");
+            const inputVilleDepart = document.getElementById("id_ville_depart");
+            const inputVilleArrivee = document.getElementById("id_ville_arrivee");
+            const listDepart = document.getElementById("list_depart");
+            const listArrivee = document.getElementById("list_arrivee");
+
+            // Si le champ a une erreur de validation Django (et contient déjà du texte), on ne le désactive PAS.
+            if(inputVilleDepart) {
+                inputVilleDepart.setAttribute("list", "list_depart");
+                if(!inputVilleDepart.value) { 
+                    inputVilleDepart.setAttribute("placeholder", "Choisissez un pays d'abord");
+                    inputVilleDepart.disabled = true; 
+                }
+            }
+            if(inputVilleArrivee) {
+                inputVilleArrivee.setAttribute("list", "list_arrivee");
+                if(!inputVilleArrivee.value) {
+                    inputVilleArrivee.setAttribute("placeholder", "Choisissez un pays d'abord");
+                    inputVilleArrivee.disabled = true;
+                }
+            }
+
+            const paysList = Object.keys(dataAfrique).sort();
+            paysList.forEach(pays => {
+                selectPaysDepart.add(new Option(pays, pays));
+                selectPaysArrivee.add(new Option(pays, pays));
+            });
+
+            function updateVilles(selectPaysElem, datalistElem, inputVilleElem) {
+                const paysChoisi = selectPaysElem.value;
+                datalistElem.innerHTML = '';
+                inputVilleElem.value = '';
+
+                if (paysChoisi && dataAfrique[paysChoisi]) {
+                    inputVilleElem.disabled = false;
+                    inputVilleElem.setAttribute("placeholder", "Tapez ou choisissez une ville...");
+                    const villesDuPays = dataAfrique[paysChoisi].sort();
+                    villesDuPays.forEach(ville => {
+                        const option = document.createElement('option');
+                        option.value = ville;
+                        datalistElem.appendChild(option);
+                    });
+                } else {
+                    inputVilleElem.disabled = true;
+                    inputVilleElem.setAttribute("placeholder", "Choisissez un pays d'abord");
+                }
+            }
+
+            if(selectPaysDepart) selectPaysDepart.addEventListener('change', () => updateVilles(selectPaysDepart, listDepart, inputVilleDepart));
+            if(selectPaysArrivee) selectPaysArrivee.addEventListener('change', () => updateVilles(selectPaysArrivee, listArrivee, inputVilleArrivee));
+        });
+    </script>
+</body>
+</html>

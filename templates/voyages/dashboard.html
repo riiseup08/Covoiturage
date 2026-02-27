@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        /* En-tête */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; background: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
+        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
+        .nav-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; transition: 0.3s ease; font-size: 15px; }
+        .nav-links a:hover { background-color: #333; transform: translateY(-2px); }
+        .nav-links a.btn-primary { background-color: var(--color-earth); box-shadow: 0 4px 10px rgba(217, 93, 57, 0.2); }
+        .nav-links a.btn-primary:hover { background-color: #A64426; box-shadow: 0 6px 15px rgba(217, 93, 57, 0.3); }
+        .btn-logout { background: #FDECEA; border: none; color: #D32F2F; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: 'Outfit'; font-size: 15px; }
+        .btn-logout:hover { background: #FAD1CD; transform: translateY(-2px); }
+
+        /* Titres de sections */
+        .section-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; margin-top: 40px; border-bottom: 2px solid #EBE5D9; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Grille des cartes */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
+        .card h3 { font-size: 20px; margin-bottom: 15px; color: var(--color-earth); font-weight: 700; }
+        .card p { margin-bottom: 10px; font-size: 15px; color: #555; display: flex; align-items: flex-start; gap: 8px; }
+        .card strong { color: var(--color-night); min-width: 120px; }
+        
+        /* Boutons d'actions dans les cartes */
+        .card-actions { margin-top: 25px; display: flex; gap: 15px; }
+        .btn-edit, .btn-delete { flex: 1; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
+        .btn-edit { background-color: #F1EFE9; color: var(--color-night); }
+        .btn-edit:hover { background-color: #E2DFD6; }
+        .btn-delete { background-color: #FFF5F5; color: #D32F2F; border: 1px solid #FFEBEB; }
+        .btn-delete:hover { background-color: #FDECEA; }
+
+        /* Messages de notification */
+        .messages { margin-bottom: 20px; }
+        .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .alert-success { background-color: #E8F5E9; color: #2E7D32; border-left: 4px solid #2E7D32; }
+        .alert-error { background-color: #FDECEA; color: #D32F2F; border-left: 4px solid #D32F2F; }
+        .alert-info { background-color: #E3F2FD; color: #1565C0; border-left: 4px solid #1565C0; }
+        
+        .empty-state { text-align: center; padding: 50px 20px; background: white; border-radius: 12px; color: #888; border: 2px dashed #EBE5D9; grid-column: 1 / -1; font-size: 16px; }
+        .badge-termine { background: #E0E0E0; color: #616161; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+        .pagination { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+        .pagination a, .pagination span { padding: 8px 14px; border-radius: 8px; text-decoration: none; background: #F1EFE9; color: var(--color-night); font-weight: 600; }
+        .pagination a:hover { background: var(--color-earth); color: white; }
+        .pagination .current { background: var(--color-earth); color: white; }
+        .btn-refuse { background: #FFF5F5; color: #C62828; border: 1px solid #FFCDD2; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; font-family: 'Outfit'; }
+        .btn-refuse:hover { background: #FDECEA; }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            .nav-links { width: 100%; justify-content: space-between; }
+            .nav-links a, .btn-logout { flex: 1; text-align: center; padding: 10px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <!-- Messages de succès/erreur -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- En-tête -->
+        <div class="header">
+            <h1>👋 Salut, {{ request.user.username }}</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:add_voyage' %}" class="btn-primary">🚗 Publier un trajet</a>
+                <a href="{% url 'covoiturage:search_trajets' %}">🔍 Voir les trajets disponibles</a>
+                <a href="{% url 'covoiturage:add_demande' %}">🙋‍♂️ Publier une demande de trajet</a>
+                <a href="{% url 'covoiturage:profile' %}">👤 Mon Profil</a>
+                <a href="{% url 'covoiturage:avis_list' %}">⭐ Laisser un avis</a>
+                
+                <!-- Déconnexion -->
+                <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0; padding:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-logout">Déconnexion</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- SECTION : MES TRAJETS PROPOSÉS -->
+        <h2 class="section-title" id="trajets">🚗 Mes trajets proposés (Conducteur)</h2>
+        <div class="grid">
+            {% for voyage in voyages %}
+            <div class="card">
+                <h3>{{ voyage.ville_depart }} ➔ {{ voyage.ville_arrivee }}{% if voyage.est_termine %} <span class="badge-termine">Terminé</span>{% endif %}</h3>
+                <p><strong>📅 Départ :</strong> {{ voyage.date_depart|date:"d M Y à H:i" }}</p>
+                <p><strong>📍 Ramassage :</strong> {{ voyage.lieu_ramassage|default:"Non précisé" }}</p>
+                <p><strong>🎟️ Places libres :</strong> {{ voyage.places_disponibles }} place(s)</p>
+                <p><strong>💰 Prix :</strong> {{ voyage.prix_par_place }} FCFA</p>
+                {% if voyage.plaque_immatriculation or voyage.modele_voiture %}
+                <p><strong>🚗 Véhicule :</strong> {{ voyage.modele_voiture|default:"—" }} · Plaque {{ voyage.plaque_immatriculation|default:"—" }}</p>
+                <p><strong>🧳 Bagage accepté :</strong> {{ voyage.get_type_bagage_accepte_display }}</p>
+                {% endif %}
+                
+                <div class="card-actions">
+                    {% if not voyage.est_termine %}
+                    <form method="POST" action="{% url 'covoiturage:mark_voyage_termine' voyage.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-edit">Marquer terminé</button>
+                    </form>
+                    {% endif %}
+                    <a href="{% url 'covoiturage:edit_voyage' voyage.id %}" class="btn-edit">Modifier</a>
+                    <a href="{% url 'covoiturage:delete_voyage' voyage.id %}" class="btn-delete">Supprimer</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Vous n'avez pas encore proposé de trajet. 🚘</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% if voyages.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if voyages.has_previous %}
+            <a href="?page_v={{ voyages.previous_page_number }}&page_d={{ demandes.number }}&page_c={{ correspondances.number }}#trajets">‹ Préc.</a>
+            {% endif %}
+            <span class="current">Page {{ voyages.number }}/{{ voyages.paginator.num_pages }}</span>
+            {% if voyages.has_next %}
+            <a href="?page_v={{ voyages.next_page_number }}&page_d={{ demandes.number }}&page_c={{ correspondances.number }}#trajets">Suiv. ›</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- SECTION : MES DEMANDES DE TRAJET -->
+        <h2 class="section-title" id="demandes">🙋‍♂️ Mes demandes de trajet (Passager)</h2>
+        <div class="grid">
+            {% for demande in demandes %}
+            <div class="card">
+                <h3>{{ demande.ville_depart }} ➔ {{ demande.ville_arrivee }}</h3>
+                <p><strong>📅 Date souhaitée :</strong> {{ demande.date_voyage|date:"d M Y" }}</p>
+                <p><strong>🎟️ Places :</strong> {{ demande.places }} place(s)</p>
+                
+                <div class="card-actions">
+                    <a href="{% url 'covoiturage:edit_demande' demande.id %}" class="btn-edit">Modifier</a>
+                    <a href="{% url 'covoiturage:delete_demande' demande.id %}" class="btn-delete">Supprimer</a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Vous n'avez aucune demande de trajet en cours. 🧳</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% if demandes.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if demandes.has_previous %}
+            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.previous_page_number }}&page_c={{ correspondances.number }}#demandes">‹ Préc.</a>
+            {% endif %}
+            <span class="current">Page {{ demandes.number }}/{{ demandes.paginator.num_pages }}</span>
+            {% if demandes.has_next %}
+            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.next_page_number }}&page_c={{ correspondances.number }}#demandes">Suiv. ›</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- SECTION : CORRESPONDANCES TROUVÉES -->
+        <h2 class="section-title" id="correspondances">🤝 Matchs & Correspondances</h2>
+        <div class="grid">
+            {% for correspondance in correspondances %}
+            <div class="card" style="border-left: 6px solid var(--color-earth);">
+                <h3>Match trouvé ! 🎉</h3>
+                
+                {% if correspondance.voyage.conducteur == request.user %}
+                    <!-- Si l'utilisateur actuel est le conducteur -->
+                    <p><strong>👤 Passager :</strong> <a href="{% url 'covoiturage:public_profile' correspondance.demande.passager.username %}" style="color: var(--color-earth); font-weight: 600;">{{ correspondance.demande.passager.username }}</a></p>
+                    <p><strong>🛣️ Trajet :</strong> {{ correspondance.voyage.ville_depart }} ➔ {{ correspondance.voyage.ville_arrivee }}</p>
+                    <p><strong>📍 Lieu :</strong> {{ correspondance.voyage.lieu_ramassage|default:"Non précisé" }}</p>
+                    {% if correspondance.is_validated and correspondance.other_phone %}
+                    <p><strong>📞 Téléphone :</strong> {{ correspondance.other_phone }}</p>
+                    {% endif %}
+                {% else %}
+                    <!-- Si l'utilisateur actuel est le passager -->
+                    <p><strong>🚗 Conducteur :</strong> <a href="{% url 'covoiturage:public_profile' correspondance.voyage.conducteur.username %}" style="color: var(--color-earth); font-weight: 600;">{{ correspondance.voyage.conducteur.username }}</a></p>
+                    <p><strong>🛣️ Trajet :</strong> {{ correspondance.demande.ville_depart }} ➔ {{ correspondance.demande.ville_arrivee }}</p>
+                    {% if correspondance.is_validated and correspondance.other_phone %}
+                    <p><strong>📞 Téléphone :</strong> {{ correspondance.other_phone }}</p>
+                    {% endif %}
+                {% endif %}
+                
+                <p><strong>📌 Statut :</strong> 
+                    {% if correspondance.is_validated %}
+                        <span style="color: #2E7D32; font-weight: 800; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">Validé ✅</span>
+                    {% else %}
+                        <span style="color: #E65100; font-weight: 800; background: #FFF3E0; padding: 2px 8px; border-radius: 4px;">En attente ⏳</span>
+                    {% endif %}
+                </p>
+
+                {% if not correspondance.is_validated %}
+                <div class="card-actions" style="flex-wrap: wrap; gap: 10px;">
+                    {% if correspondance.voyage.conducteur == request.user %}
+                    <form method="POST" action="{% url 'covoiturage:validate_correspondance' correspondance.id %}" style="flex: 1; min-width: 120px;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-edit" style="width: 100%; background-color: var(--color-earth); color: white; border: none; cursor: pointer;">Valider ce match</button>
+                    </form>
+                    <form method="POST" action="{% url 'covoiturage:refuse_correspondance' correspondance.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-refuse">Refuser</button>
+                    </form>
+                    {% else %}
+                    <form method="POST" action="{% url 'covoiturage:cancel_correspondance' correspondance.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-refuse">Annuler mon intérêt</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Aucune correspondance pour le moment. L'algorithme cherche des passagers/conducteurs pour vous ! 🔍</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% if correspondances.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if correspondances.has_previous %}
+            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.number }}&page_c={{ correspondances.previous_page_number }}#correspondances">‹ Préc.</a>
+            {% endif %}
+            <span class="current">Page {{ correspondances.number }}/{{ correspondances.paginator.num_pages }}</span>
+            {% if correspondances.has_next %}
+            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.number }}&page_c={{ correspondances.next_page_number }}#correspondances">Suiv. ›</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier la demande - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; min-height: 100vh; }
+        .container { max-width: 500px; margin: 0 auto; }
+        .header { margin-bottom: 25px; }
+        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
+        .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px; font-family: 'Outfit', sans-serif; }
+        input:focus { outline: none; border-color: var(--color-earth); }
+        .btn-group { display: flex; gap: 15px; margin-top: 25px; }
+        .btn { padding: 14px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; font-family: 'Outfit'; }
+        .btn-cancel { background: #F1EFE9; color: var(--color-night); }
+        .btn-submit { background: var(--color-earth); color: white; }
+        ul.errorlist { color: #D32F2F; font-size: 13px; list-style: none; margin-top: 5px; padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Modifier la demande</h1>
+            <a href="{% url 'covoiturage:dashboard' %}" style="color: var(--color-earth); font-weight: 600;">← Retour au tableau de bord</a>
+        </div>
+        <div class="form-container">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_ville_depart">Ville de départ</label>
+                    {{ form.ville_depart }}
+                    {{ form.ville_depart.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_ville_arrivee">Ville d'arrivée</label>
+                    {{ form.ville_arrivee }}
+                    {{ form.ville_arrivee.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_date_voyage">Date souhaitée</label>
+                    {{ form.date_voyage }}
+                    {{ form.date_voyage.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_places">Nombre de places</label>
+                    {{ form.places }}
+                    {{ form.places.errors }}
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-submit">Enregistrer les modifications</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

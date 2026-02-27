@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .container { max-width: 420px; width: 100%; }
+        .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; }
+        h1 { font-size: 26px; font-weight: 800; margin-bottom: 8px; color: var(--color-night); }
+        .subtitle { color: #666; margin-bottom: 28px; font-size: 15px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px; font-family: 'Outfit', sans-serif; }
+        input:focus { outline: none; border-color: var(--color-earth); }
+        .btn-submit { width: 100%; padding: 16px; background: var(--color-earth); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: 'Outfit'; margin-top: 10px; }
+        .btn-submit:hover { background: #A64426; }
+        .links { text-align: center; margin-top: 24px; font-size: 15px; color: #555; }
+        .links a { color: var(--color-earth); font-weight: 600; text-decoration: none; }
+        .links a:hover { text-decoration: underline; }
+        ul.errorlist { color: #D32F2F; font-size: 13px; list-style: none; margin-top: 5px; padding: 0; }
+        .back { display: inline-block; margin-bottom: 20px; color: var(--color-earth); font-weight: 600; text-decoration: none; }
+        .back:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{% url 'covoiturage:landing' %}" class="back">← Accueil</a>
+        <div class="form-container">
+            <h1>Connexion</h1>
+            <p class="subtitle">Accédez à votre espace Covoit.Africa</p>
+            <form method="POST">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+                {% endfor %}
+                {% if form.non_field_errors %}<ul class="errorlist">{{ form.non_field_errors }}</ul>{% endif %}
+                <button type="submit" class="btn-submit">Se connecter</button>
+            </form>
+            <p class="links">Pas encore de compte ? <a href="{% url 'covoiturage:register' %}">Inscrivez-vous</a></p>
+        </div>
+    </div>
+</body>
+</html>

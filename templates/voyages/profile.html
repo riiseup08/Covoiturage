@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon profil - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; min-height: 100vh; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
+        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; transition: 0.3s ease; font-size: 15px; }
+        .nav-links a:hover { background-color: #333; }
+        .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--color-night); }
+        input[type="text"], input[type="tel"], textarea { width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px; font-family: 'Outfit', sans-serif; }
+        input:focus, textarea:focus { outline: none; border-color: var(--color-earth); }
+        textarea { min-height: 100px; resize: vertical; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; }
+        .checkbox-group input { width: auto; }
+        .btn-group { display: flex; gap: 15px; margin-top: 25px; }
+        .btn { padding: 14px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.3s; font-family: 'Outfit'; }
+        .btn-cancel { background: #F1EFE9; color: var(--color-night); }
+        .btn-cancel:hover { background: #E2DFD6; }
+        .btn-submit { background: var(--color-earth); color: white; }
+        .btn-submit:hover { background: #A64426; }
+        ul.errorlist { color: #D32F2F; font-size: 13px; list-style: none; margin-top: 5px; padding: 0; }
+        .messages .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; }
+        .alert-success { background: #E8F5E9; color: #2E7D32; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👤 Mon profil</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="form-container">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_bio">Bio</label>
+                    {{ form.bio }}
+                    {{ form.bio.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_phone">Téléphone</label>
+                    {{ form.phone }}
+                    {{ form.phone.errors }}
+                </div>
+                <div class="form-group checkbox-group">
+                    {{ form.is_driver }}
+                    <label for="id_is_driver" style="margin-bottom:0;">Je propose des trajets (conducteur)</label>
+                </div>
+                {{ form.is_driver.errors }}
+                <div class="btn-group">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-submit">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

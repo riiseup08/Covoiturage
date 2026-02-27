@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laisser un avis - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
+        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; }
+        .nav-links a:hover { background-color: #333; }
+        .card { background: white; padding: 22px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .card-info p { margin: 4px 0; color: #555; font-size: 15px; }
+        .card-info strong { color: var(--color-night); }
+        .btn-noter { background: var(--color-earth); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+        .btn-noter:hover { background: #A64426; }
+        .empty-state { text-align: center; padding: 50px 20px; background: white; border-radius: 12px; color: #888; border: 2px dashed #EBE5D9; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⭐ Laisser un avis</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+        <p style="margin-bottom: 20px; color: #555;">Après un trajet terminé, vous pouvez noter les conducteurs ou passagers avec qui vous avez voyagé.</p>
+        {% for voyage, other_user in opportunities %}
+        <div class="card">
+            <div class="card-info">
+                <p><strong>Trajet :</strong> {{ voyage.ville_depart }} → {{ voyage.ville_arrivee }} ({{ voyage.date_depart|date:"d/m/Y" }})</p>
+                <p><strong>À noter :</strong> {{ other_user.username }}</p>
+            </div>
+            <a href="{% url 'covoiturage:add_avis' voyage.id other_user.id %}" class="btn-noter">Noter</a>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p>Vous n'avez aucun avis à laisser pour le moment.</p>
+            <p style="margin-top: 10px;">Marquez vos trajets comme « Terminé » et validez vos matchs pour pouvoir noter les autres participants.</p>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

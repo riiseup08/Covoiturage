@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil de {{ profile.user.username }} - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; min-height: 100vh; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
+        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; }
+        .nav-links a:hover { background-color: #333; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; }
+        .card h2 { font-size: 22px; margin-bottom: 20px; color: var(--color-earth); }
+        .card p { margin-bottom: 12px; font-size: 16px; color: #555; }
+        .card strong { color: var(--color-night); }
+        .badge { display: inline-block; background: #FFF2ED; color: var(--color-earth); padding: 4px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Profil public</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+        <div class="card">
+            <h2>{{ profile.user.username }}</h2>
+            {% if note_moyenne is not None %}
+            <p style="margin-bottom: 12px;"><strong>Note moyenne :</strong> <span style="color: var(--color-earth); font-weight: 800;">{{ note_moyenne|floatformat:1 }}</span> / 5 ({{ avis_count }} avis)</p>
+            {% endif %}
+            {% if profile.bio %}
+            <p><strong>Bio :</strong><br>{{ profile.bio }}</p>
+            {% endif %}
+            {% if profile.phone %}
+            <p><strong>Téléphone :</strong> {{ profile.phone }}</p>
+            {% endif %}
+            {% if profile.is_driver %}
+            <span class="badge">🚗 Conducteur</span>
+            {% endif %}
+            {% if not profile.bio and not profile.phone and not note_moyenne %}
+            <p style="color:#888;">Ce profil n'a pas encore été complété.</p>
+            {% endif %}
+        </div>
+        {% if avis_list %}
+        <div class="card" style="margin-top: 25px;">
+            <h2 style="margin-bottom: 15px;">⭐ Avis reçus</h2>
+            {% for avis in avis_list %}
+            <div style="border-bottom: 1px solid #EBE5D9; padding-bottom: 15px; margin-bottom: 15px;">
+                <p style="margin-bottom: 4px;"><strong>{{ avis.auteur.username }}</strong> · {{ avis.note }}/5 · <span style="color:#888; font-size: 14px;">{{ avis.created_at|date:"d/m/Y" }}</span></p>
+                <p style="color: #555; font-size: 15px;">Trajet {{ avis.voyage.ville_depart }} → {{ avis.voyage.ville_arrivee }}</p>
+                {% if avis.commentaire %}<p style="margin-top: 6px; font-style: italic;">« {{ avis.commentaire }} »</p>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

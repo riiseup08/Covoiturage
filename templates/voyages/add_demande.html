@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publier une demande de trajet - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
+        .container { max-width: 560px; width: 100%; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
+        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; }
+        .nav-links a:hover { background-color: #333; }
+        .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; }
+        .form-container h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--color-night); }
+        .subtitle { color: #666; margin-bottom: 28px; font-size: 15px; }
+        .form-group { margin-bottom: 22px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--color-night); }
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px;
+            font-family: 'Outfit', sans-serif; background-color: #FAFAFA; transition: all 0.3s ease; color: var(--color-night);
+        }
+        input:focus { outline: none; border-color: var(--color-earth); background-color: white; box-shadow: 0 0 0 4px rgba(217, 93, 57, 0.1); }
+        .form-row { display: flex; gap: 20px; }
+        .form-row .form-group { flex: 1; }
+        .btn-group { display: flex; gap: 15px; margin-top: 28px; }
+        .btn { flex: 1; padding: 16px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; transition: all 0.3s ease; font-family: 'Outfit'; }
+        .btn-cancel { background-color: #F1EFE9; color: var(--color-night); }
+        .btn-cancel:hover { background-color: #E2DFD6; }
+        .btn-submit { background-color: var(--color-earth); color: white; box-shadow: 0 10px 20px rgba(217, 93, 57, 0.2); }
+        .btn-submit:hover { background-color: #A64426; transform: translateY(-2px); box-shadow: 0 12px 25px rgba(217, 93, 57, 0.3); }
+        ul.errorlist { color: #D32F2F; font-size: 13px; font-weight: 600; list-style: none; margin-top: 6px; padding-left: 0; }
+        .form-group.field-error input { border-color: #D32F2F; background-color: #FFFAFA; }
+        .error-box { background: #FDECEA; border-left: 4px solid #D32F2F; padding: 15px; margin-bottom: 20px; border-radius: 6px; }
+        .error-box ul { margin: 0; }
+        @media (max-width: 600px) { .form-row { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🙋‍♂️ Demande de trajet</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+        <div class="form-container">
+            <h2>Publier une demande de trajet</h2>
+            <p class="subtitle">Indiquez où vous souhaitez aller et quand. Les conducteurs qui proposent un trajet correspondant pourront vous contacter.</p>
+            {% if form.non_field_errors %}
+            <div class="error-box">
+                <ul>
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group {% if form.ville_depart.errors %}field-error{% endif %}">
+                        <label for="id_ville_depart">Ville de départ</label>
+                        <input type="text" name="ville_depart" id="id_ville_depart" value="{{ form.ville_depart.value|default:'' }}" maxlength="100" required placeholder="Ex: Douala">
+                        {{ form.ville_depart.errors }}
+                    </div>
+                    <div class="form-group {% if form.ville_arrivee.errors %}field-error{% endif %}">
+                        <label for="id_ville_arrivee">Ville d'arrivée</label>
+                        <input type="text" name="ville_arrivee" id="id_ville_arrivee" value="{{ form.ville_arrivee.value|default:'' }}" maxlength="100" required placeholder="Ex: Yaoundé">
+                        {{ form.ville_arrivee.errors }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group {% if form.date_voyage.errors %}field-error{% endif %}">
+                        <label for="id_date_voyage">Date souhaitée</label>
+                        <input type="date" name="date_voyage" id="id_date_voyage" value="{{ form.date_voyage.value|default:'' }}" required>
+                        {{ form.date_voyage.errors }}
+                    </div>
+                    <div class="form-group {% if form.places.errors %}field-error{% endif %}">
+                        <label for="id_places">Nombre de places</label>
+                        <input type="number" name="places" id="id_places" value="{{ form.places.value|default:1 }}" min="1" required>
+                        {{ form.places.errors }}
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-submit">Publier la demande</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Covoit.Africa - L'Afrique en mouvement</title>
+    <!-- Polices Google : Syne pour l'élégance, et un sans-serif géométrique -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Palette africaine vibrante et chaude */
+            --color-earth: #D95D39; /* Ocre / Latérite */
+            --color-earth-dark: #A64426;
+            --color-sun: #F2A65A;   /* Soleil / Savane */
+            --color-night: #1A1A1A; /* Nuit profonde */
+            --color-bg: #FAF6ED;    /* Sable clair */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-night);
+            overflow-x: hidden;
+            /* Animation d'entrée douce */
+            animation: fadeIn 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===== PATTERN TRADITIONNEL AFRICAIN DISCRET ===== */
+        .african-pattern {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(var(--color-sun) 2px, transparent 2px), radial-gradient(var(--color-sun) 2px, transparent 2px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            opacity: 0.05; /* Très discret */
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ===== NAVIGATION FLUIDE ===== */
+        nav {
+            position: fixed; /* Reste en haut au scroll */
+            top: 0; width: 100%;
+            padding: 25px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 1000;
+            background: linear-gradient(to bottom, rgba(26, 26, 26, 0.9) 0%, rgba(26, 26, 26, 0) 100%);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .logo span { color: var(--color-earth); }
+
+        .nav-links { display: flex; gap: 30px; align-items: center; }
+        
+        .nav-link {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+        }
+
+        /* Soulignement dynamique au survol */
+        .nav-link::after {
+            content: ''; position: absolute; width: 0; height: 2px;
+            bottom: -5px; left: 0; background-color: var(--color-earth);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after { width: 100%; }
+
+        .btn-nav {
+            background-color: var(--color-earth);
+            color: white !important;
+            padding: 12px 30px;
+            border-radius: 4px; /* Bord carré moderne */
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 4px 4px 0px var(--color-sun);
+        }
+
+        .btn-nav:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--color-sun);
+        }
+
+        /* ===== HERO SECTION (PARALLAX + FULLSCREEN) ===== */
+        .hero {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Aligné à gauche */
+            padding: 0 8%;
+            /* Effet Parallax avec image de route africaine */
+            background-image: url('https://images.unsplash.com/photo-1547471080-7fc2caa7f5a6?q=80&w=2071&auto=format&fit=crop');
+            background-attachment: fixed; /* C'est ça qui crée l'effet parallax au scroll ! */
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+
+        /* Filtre sombre pour lire le texte */
+        .hero-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(26,26,26,0.9) 0%, rgba(26,26,26,0.4) 100%);
+            z-index: 2;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 700px;
+            color: white;
+            /* Animation d'apparition qui glisse depuis la gauche */
+            animation: slideRight 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideRight {
+            0% { opacity: 0; transform: translateX(-50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        .tagline {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--color-sun);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Ligne décorative avant la tagline */
+        .tagline::before {
+            content: ''; display: inline-block; width: 40px; height: 3px;
+            background-color: var(--color-earth);
+        }
+
+        h1 {
+            font-size: clamp(50px, 6vw, 85px); /* Fluide et massif */
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        p.desc {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #ddd;
+            margin-bottom: 45px;
+            font-weight: 400;
+        }
+
+        /* ----- BOUTONS DYNAMIQUES ----- */
+        .cta-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .btn-large {
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--color-earth);
+            color: white;
+            border: 2px solid var(--color-earth);
+        }
+
+        /* Effet de balayage sur le bouton au survol */
+        .btn-primary::before {
+            content: ''; position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover { background-color: var(--color-earth-dark); }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background-color: white;
+            color: var(--color-night);
+        }
+
+        /* ===== SECTION CARACTÉRISTIQUES (DYNAMIQUE) ===== */
+        .features {
+            padding: 120px 8%;
+            background-color: var(--color-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-header h2 {
+            font-size: 50px;
+            font-weight: 800;
+            color: var(--color-night);
+        }
+
+        .cards-container {
+            display: flex;
+            gap: 40px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Cartes qui se soulèvent au survol */
+        .card {
+            flex: 1;
+            background: white;
+            padding: 50px 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            border-bottom: 5px solid transparent;
+        }
+
+        .card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 25px 45px rgba(0,0,0,0.1);
+            border-bottom: 5px solid var(--color-earth);
+        }
+
+        .card-icon {
+            width: 80px; height: 80px;
+            background-color: #FFF2ED;
+            color: var(--color-earth);
+            border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 32px; font-weight: 900;
+            margin: 0 auto 25px auto;
+        }
+
+        .card h3 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* ===== MOBILE RESPONSIVE ===== */
+        @media (max-width: 900px) {
+            .hero { padding: 0 5%; justify-content: center; text-align: center; background-attachment: scroll; /* Désactive parallax sur mobile car souvent buggé */ }
+            .hero-overlay { background: rgba(26,26,26,0.7); }
+            .hero-content { display: flex; flex-direction: column; align-items: center; }
+            .tagline::before { display: none; }
+            .cta-group { flex-direction: column; width: 100%; }
+            .nav-links a:not(.btn-nav) { display: none; }
+            
+            .cards-container { flex-direction: column; }
+            .section-header h2 { font-size: 36px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="{% url 'covoiturage:landing' %}" class="logo">COVOIT<span>.</span>AFRICA</a>
+        <div class="nav-links">
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'covoiturage:dashboard' %}" class="nav-link">Mon espace</a>
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-nav" style="border:none; cursor:pointer;">Déconnexion</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="nav-link">Connexion</a>
+                <a href="{% url 'covoiturage:register' %}" class="btn-nav">Rejoindre</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- SECTION 1 : Parallax Hero -->
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="tagline">Parcourez le continent</div>
+            <h1>La route nous<br>appartient.</h1>
+            <p class="desc">De ville en ville, partagez vos trajets. Rencontrez des personnes formidables, réduisez vos frais et participez au plus grand réseau de mobilité africain.</p>
+            
+            <div class="cta-group">
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'covoiturage:add_voyage' %}" class="btn-large btn-primary">Publier un trajet</a>
+                <a href="{% url 'covoiturage:search_trajets' %}" class="btn-large btn-secondary">Voir les trajets disponibles</a>
+                {% else %}
+                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-primary">Chercher un passager</a>
+                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-secondary">Trouver une voiture</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2 : Cartes dynamiques -->
+    <section class="features">
+        <div class="african-pattern"></div>
+        
+        <div class="section-header">
+            <h2>Une nouvelle façon de voyager</h2>
+        </div>
+
+        <div class="cards-container">
+            <!-- Carte 1 -->
+            <div class="card">
+                <div class="card-icon">1</div>
+                <h3>Économique</h3>
+                <p>Ne payez plus le prix fort pour voyager. Divisez les coûts d'essence et de péage de manière juste et transparente avec vos compagnons de route.</p>
+            </div>
+            
+            <!-- Carte 2 -->
+            <div class="card">
+                <div class="card-icon">2</div>
+                <h3>Convivial</h3>
+                <p>La route est longue ? L'ambiance la raccourcit. Voyagez avec des personnes partageant vos valeurs et transformez un long trajet en un moment agréable.</p>
+            </div>
+            
+            <!-- Carte 3 -->
+            <div class="card">
+                <div class="card-icon">3</div>
+                <h3>Sécurisé</h3>
+                <p>Votre sécurité est notre priorité. Chaque membre est vérifié, noté, et vous choisissez avec qui vous acceptez de f

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voir les trajets disponibles - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
+        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; }
+        .nav-links a:hover { background-color: #333; }
+        .search-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .search-box h2 { font-size: 18px; margin-bottom: 15px; color: var(--color-night); }
+        .form-inline { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
+        .form-group { flex: 1; min-width: 140px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+        .form-group input { width: 100%; padding: 12px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 15px; font-family: 'Outfit', sans-serif; }
+        .form-group input:focus { outline: none; border-color: var(--color-earth); }
+        .btn-search { padding: 12px 24px; background: var(--color-earth); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Outfit'; font-size: 15px; }
+        .btn-search:hover { background: #A64426; }
+        .results-count { margin-bottom: 15px; font-size: 15px; color: #555; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 22px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; }
+        .card h3 { font-size: 18px; margin-bottom: 12px; color: var(--color-earth); font-weight: 700; }
+        .card p { margin-bottom: 8px; font-size: 14px; color: #555; }
+        .card a.profile-link { color: var(--color-earth); font-weight: 600; text-decoration: none; }
+        .card a.profile-link:hover { text-decoration: underline; }
+        .empty-state { text-align: center; padding: 50px 20px; background: white; border-radius: 12px; color: #888; border: 2px dashed #EBE5D9; font-size: 16px; }
+        .pagination { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 25px; }
+        .pagination a, .pagination span { padding: 8px 14px; border-radius: 8px; text-decoration: none; background: #F1EFE9; color: var(--color-night); font-weight: 600; }
+        .pagination a:hover { background: var(--color-earth); color: white; }
+        .pagination .current { background: var(--color-earth); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Voir les trajets disponibles</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <h2>Filtres</h2>
+            <form method="GET" class="form-inline">
+                <div class="form-group">
+                    <label for="ville_depart">Ville de départ</label>
+                    <input type="text" name="ville_depart" id="ville_depart" value="{{ ville_depart }}" placeholder="Ex: Douala">
+                </div>
+                <div class="form-group">
+                    <label for="ville_arrivee">Ville d'arrivée</label>
+                    <input type="text" name="ville_arrivee" id="ville_arrivee" value="{{ ville_arrivee }}" placeholder="Ex: Yaoundé">
+                </div>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" name="date" id="date" value="{{ date }}">
+                </div>
+                <div class="form-group">
+                    <label for="type_bagage">Bagage accepté</label>
+                    <select name="type_bagage" id="type_bagage" style="width:100%; padding:12px; border:2px solid #EBE5D9; border-radius:8px; font-family:'Outfit',sans-serif;">
+                        <option value="">Tous</option>
+                        {% for value, label in Voyage.BAGAGE_CHOICES %}
+                        <option value="{{ value }}" {% if type_bagage == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="prix_max">Prix max (FCFA)</label>
+                    <input type="number" name="prix_max" id="prix_max" value="{{ prix_max|default:'' }}" placeholder="Ex: 5000" min="0" step="100">
+                </div>
+                <div class="form-group">
+                    <label for="places_min">Places min</label>
+                    <input type="number" name="places_min" id="places_min" value="{{ places_min|default:'' }}" placeholder="1" min="1">
+                </div>
+                <button type="submit" class="btn-search">Rechercher</button>
+            </form>
+        </div>
+
+        <p class="results-count">{{ voyages.paginator.count }} trajet(s) trouvé(s)</p>
+        <div class="grid">
+            {% for voyage in voyages %}
+            <div class="card">
+                <h3>{{ voyage.ville_depart }} ➔ {{ voyage.ville_arrivee }}</h3>
+                <p><strong>📅 Départ :</strong> {{ voyage.date_depart|date:"d M Y à H:i" }}</p>
+                <p><strong>📍 Ramassage :</strong> {{ voyage.lieu_ramassage|default:"Non précisé" }}</p>
+                <p><strong>🎟️ Places :</strong> {{ voyage.places_disponibles }} · <strong>💰</strong> {{ voyage.prix_par_place }} FCFA</p>
+                {% if voyage.plaque_immatriculation or voyage.modele_voiture %}
+                <p><strong>🚗 Véhicule :</strong> {{ voyage.modele_voiture|default:"—" }} · Plaque {{ voyage.plaque_immatriculation|default:"—" }}</p>
+                <p><strong>🧳 Bagage accepté :</strong> {{ voyage.get_type_bagage_accepte_display }}</p>
+                {% endif %}
+                <p>
+                    <strong>👤 Conducteur :</strong>
+                    <a href="{% url 'covoiturage:public_profile' voyage.conducteur.username %}" class="profile-link">{{ voyage.conducteur.username }}</a>
+                </p>
+            </div>
+            {% empty %}
+            <div class="empty-state grid-span">
+                Aucun trajet ne correspond à votre recherche. Essayez d’élargir les critères ou <a href="{% url 'covoiturage:add_demande' %}">publiez une demande</a>.
+            </div>
+            {% endfor %}
+        </div>
+        {% if voyages.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if voyages.has_previous %}
+            <a href="?page={{ voyages.previous_page_number }}&ville_depart={{ ville_depart }}&ville_arrivee={{ ville_arrivee }}&date={{ date }}&type_bagage={{ type_bagage }}&prix_max={{ prix_max }}&places_min={{ places_min }}">‹ Préc.</a>
+            {% endif %}
+            <span class="current">Page {{ voyages.number }}/{{ voyages.paginator.num_pages }}</span>
+            {% if voyages.has_next %}
+            <a href="?page={{ voyages.next_page_number }}&ville_depart={{ ville_depart }}&ville_arrivee={{ ville_arrivee }}&date={{ date }}&type_bagage={{ type_bagage }}&prix_max={{ prix_max }}&places_min={{ places_min }}">Suiv. ›</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
