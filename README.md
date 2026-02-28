@@ -53,11 +53,30 @@ python manage.py runserver
 
 Ouvrir **http://127.0.0.1:8000/** dans le navigateur.
 
-## Variables d'environnement (optionnel)
+## Variables d'environnement
 
-- `DJANGO_SECRET_KEY` : clé secrète (production)
-- `DJANGO_DEBUG` : `True` ou `False` (défaut : `True`)
-- `ALLOWED_HOSTS` : liste séparée par des virgules, ex. `localhost,127.0.0.1,mondomaine.com`
+### Général
+- `DJANGO_SECRET_KEY` : clé secrète (obligatoire en production)
+- `DJANGO_DEBUG` : `true` ou `false` (défaut : `false`)
+- `ALLOWED_HOSTS` : domaines autorisés, séparés par des virgules (ex. `covoiturage-xxx.onrender.com,localhost`)
+- `CSRF_TRUSTED_ORIGINS` : origines HTTPS pour les formulaires (ex. `https://covoiturage-xxx.onrender.com`)
+
+### Email (production – mot de passe oublié, etc.)
+
+Sans config email en production, l’app n’envoie pas d’emails (pas de crash). Pour activer l’envoi (SMTP) :
+
+| Variable | Exemple | Description |
+|----------|---------|-------------|
+| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` | Backend SMTP |
+| `EMAIL_HOST` | `smtp.gmail.com` ou `smtp.sendgrid.net` | Serveur SMTP |
+| `EMAIL_PORT` | `587` | Port (souvent 587 TLS, 465 SSL) |
+| `EMAIL_USE_TLS` | `true` | Utiliser TLS |
+| `EMAIL_USE_SSL` | `false` | Ou SSL (port 465) |
+| `EMAIL_HOST_USER` | Votre adresse ou identifiant SMTP | |
+| `EMAIL_HOST_PASSWORD` | Mot de passe ou clé API | |
+| `DEFAULT_FROM_EMAIL` | `noreply@votredomaine.com` | Expéditeur des emails |
+
+**Exemple (Render)** : dans le dashboard Render → votre service → Environment, ajouter ces variables. Pour Gmail : activer « Accès moins sécurisé » ou utiliser un mot de passe d’application.
 
 ## Structure du projet
 

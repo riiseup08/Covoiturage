@@ -26,9 +26,16 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DJANGO_DEBUG', 'false').lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = ['covoiturage-0m0x.onrender.com', 'localhost', '127.0.0.1']
+# En prod, ajouter votre domaine (ex. covoiturage-xxx.onrender.com). Séparer par des virgules si plusieurs.
+_ALLOWED = os.environ.get('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = [h.strip() for h in _ALLOWED.split(',') if h.strip()] or [
+    'localhost', '127.0.0.1', 'covoiturage-0m0x.onrender.com'
+]
+# Requis en HTTPS (ex. Render) pour que les formulaires (inscription, connexion) passent.
+_CSRF_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _CSRF_ORIGINS.split(',') if o.strip()]
 
 
 # Application definition
@@ -138,11 +145,24 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# Email (mot de passe oublié)
-# En dev : les emails s'affichent dans la console. En prod : configurer SMTP.
-EMAIL_BACKEND = os.environ.get(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend'
-)
+# Email (mot de passe oublié, erreurs admin)
+# En prod : définir EMAIL_BACKEND + variables SMTP dans les variables d'environnement.
+# Sans config SMTP en prod : aucun envoi (pas de crash).
+_EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
+if _EMAIL_BACKEND:
+    EMAIL_BACKEND = _EMAIL_BACKEND
+    EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587') or '587')
+    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
+    EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() in ('1', 'true', 'yes')
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+    EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '10') or '10')
+else:
+    # Pas de SMTP configuré : en dev = console, en prod = dummy (évite 500)
+    EMAIL_BACKEND = (
+        'django.core.mail.backends.console.EmailBackend' if DEBUG
+        else 'django.core.mail.backends.dummy.EmailBackend'
+    )
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@covoit.africa')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
