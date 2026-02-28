@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Covoit.Africa - L'Afrique en mouvement</title>
-    <!-- Polices Google : Syne pour l'élégance, et un sans-serif géométrique -->
+    <meta name="description" content="Covoiturage en Afrique : partagez vos trajets, réduisez vos frais. Trouvez un conducteur ou des passagers en toute confiance.">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -292,23 +292,133 @@
             line-height: 1.6;
         }
 
+        /* ===== COMMENT ÇA MARCHE ===== */
+        .steps-container {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 10;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .step {
+            flex: 1;
+            min-width: 220px;
+            background: white;
+            padding: 35px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .step:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+        }
+        .step-num {
+            display: inline-block;
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, var(--color-earth), var(--color-sun));
+            color: white;
+            border-radius: 50%;
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 48px;
+            margin-bottom: 18px;
+        }
+        .step h3 {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: var(--color-night);
+        }
+        .step p {
+            color: #666;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .step-arrow {
+            color: var(--color-earth);
+            font-size: 28px;
+            font-weight: 800;
+            align-self: center;
+            opacity: 0.7;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--color-night);
+            color: #ccc;
+            padding: 50px 8% 30px;
+            text-align: center;
+        }
+        .footer-inner {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .footer-logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        .footer-logo span { color: var(--color-earth); }
+        .footer-tagline {
+            font-size: 16px;
+            margin-bottom: 28px;
+            color: #999;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        .footer-links a {
+            color: var(--color-sun);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .footer-links a:hover { color: white; text-decoration: underline; }
+        .footer-copy {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* ===== NAV AU SCROLL (fond plein) ===== */
+        nav.scrolled {
+            background: rgba(26, 26, 26, 0.98);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+        }
+
         /* ===== MOBILE RESPONSIVE ===== */
         @media (max-width: 900px) {
-            .hero { padding: 0 5%; justify-content: center; text-align: center; background-attachment: scroll; /* Désactive parallax sur mobile car souvent buggé */ }
+            .hero { padding: 0 5%; justify-content: center; text-align: center; background-attachment: scroll; }
             .hero-overlay { background: rgba(26,26,26,0.7); }
             .hero-content { display: flex; flex-direction: column; align-items: center; }
             .tagline::before { display: none; }
-            .cta-group { flex-direction: column; width: 100%; }
+            .cta-group { flex-direction: column; width: 100%; align-items: stretch; }
+            .btn-large { text-align: center; }
             .nav-links a:not(.btn-nav) { display: none; }
             
             .cards-container { flex-direction: column; }
             .section-header h2 { font-size: 36px; }
+            
+            .steps-container { flex-direction: column; align-items: stretch; }
+            .step-arrow { transform: rotate(90deg); align-self: center; }
         }
     </style>
 </head>
 <body>
 
-    <nav>
+    <nav id="main-nav">
         <a href="{% url 'covoiturage:landing' %}" class="logo">COVOIT<span>.</span>AFRICA</a>
         <div class="nav-links">
             {% if request.user.is_authenticated %}
@@ -337,8 +447,8 @@
                 <a href="{% url 'covoiturage:add_voyage' %}" class="btn-large btn-primary">Publier un trajet</a>
                 <a href="{% url 'covoiturage:search_trajets' %}" class="btn-large btn-secondary">Voir les trajets disponibles</a>
                 {% else %}
-                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-primary">Chercher un passager</a>
-                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-secondary">Trouver une voiture</a>
+                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-primary">Je propose un trajet</a>
+                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-secondary">Je cherche un trajet</a>
                 {% endif %}
             </div>
         </div>
@@ -371,4 +481,66 @@
             <div class="card">
                 <div class="card-icon">3</div>
                 <h3>Sécurisé</h3>
-                <p>Votre sécurité est notre priorité. Chaque membre est vérifié, noté, et vous choisissez avec qui vous acceptez de f
+                <p>Votre sécurité est notre priorité. Chaque membre peut être noté après le trajet. Vous choisissez avec qui vous partez en toute confiance.</p>
+            </div>
+        </div>
+
+        <!-- Comment ça marche -->
+        <div class="section-header" style="margin-top: 100px;">
+            <h2>Comment ça marche ?</h2>
+            <p style="color: #666; font-size: 18px; margin-top: 15px; max-width: 600px; margin-left: auto; margin-right: auto;">En trois étapes, trouvez un trajet ou remplissez votre voiture.</p>
+        </div>
+        <div class="steps-container">
+            <div class="step">
+                <span class="step-num">1</span>
+                <h3>Inscrivez-vous</h3>
+                <p>Créez un compte gratuit en une minute. Complétez votre profil (bio, téléphone) pour rassurer les autres.</p>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <span class="step-num">2</span>
+                <h3>Publiez ou cherchez</h3>
+                <p>Conducteur : proposez un trajet (ville, date, prix). Passager : publiez une demande ou parcourez les trajets disponibles.</p>
+            </div>
+            <div class="step-arrow">→</div>
+            <div class="step">
+                <span class="step-num">3</span>
+                <h3>Voyagez</h3>
+                <p>Validez votre match, coordonnez le lieu de rendez-vous et partagez la route. Puis laissez un avis après le trajet.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <a href="{% url 'covoiturage:landing' %}" class="footer-logo">COVOIT<span>.</span>AFRICA</a>
+            <p class="footer-tagline">L'Afrique en mouvement. Covoiturage simple, sûr et solidaire.</p>
+            <div class="footer-links">
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'covoiturage:dashboard' %}">Tableau de bord</a>
+                <a href="{% url 'covoiturage:search_trajets' %}">Voir les trajets</a>
+                <a href="{% url 'covoiturage:profile' %}">Mon profil</a>
+                {% else %}
+                <a href="{% url 'login' %}">Connexion</a>
+                <a href="{% url 'covoiturage:register' %}">Créer un compte</a>
+                {% endif %}
+            </div>
+            <p class="footer-copy">© 2025 Covoit.Africa</p>
+        </div>
+    </footer>
+
+    <script>
+        (function() {
+            var nav = document.getElementById('main-nav');
+            if (nav) {
+                function onScroll() {
+                    nav.classList.toggle('scrolled', window.scrollY > 80);
+                }
+                window.addEventListener('scroll', onScroll, { passive: true });
+                onScroll();
+            }
+        })();
+    </script>
+</body>
+</html>

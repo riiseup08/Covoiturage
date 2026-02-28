@@ -57,6 +57,13 @@
         .btn-refuse { background: #FFF5F5; color: #C62828; border: 1px solid #FFCDD2; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; font-family: 'Outfit'; }
         .btn-refuse:hover { background: #FDECEA; }
 
+        /* Bloc stats */
+        .stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
+        .stat-box { flex: 1; min-width: 140px; background: white; padding: 20px 24px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.04); border: 1px solid #F1EFE9; text-align: center; }
+        .stat-box .num { font-size: 32px; font-weight: 800; color: var(--color-earth); line-height: 1.2; }
+        .stat-box .label { font-size: 14px; color: #666; margin-top: 4px; }
+        .note-badge { display: inline-block; background: #FFF8E1; color: #F57C00; padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-left: 6px; }
+
         @media (max-width: 768px) {
             .header { flex-direction: column; align-items: flex-start; }
             .nav-links { width: 100%; justify-content: space-between; }
@@ -94,6 +101,22 @@
                     {% csrf_token %}
                     <button type="submit" class="btn-logout">Déconnexion</button>
                 </form>
+            </div>
+        </div>
+
+        <!-- Stats rapides -->
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="num">{{ stats.total_voyages }}</div>
+                <div class="label">Trajets proposés</div>
+            </div>
+            <div class="stat-box">
+                <div class="num">{{ stats.total_demandes }}</div>
+                <div class="label">Demandes</div>
+            </div>
+            <div class="stat-box">
+                <div class="num">{{ stats.total_correspondances }}</div>
+                <div class="label">Matchs</div>
             </div>
         </div>
 
@@ -176,60 +199,75 @@
         <!-- SECTION : CORRESPONDANCES TROUVÉES -->
         <h2 class="section-title" id="correspondances">🤝 Matchs & Correspondances</h2>
         <div class="grid">
-            {% for correspondance in correspondances %}
-            <div class="card" style="border-left: 6px solid var(--color-earth);">
-                <h3>Match trouvé ! 🎉</h3>
-                
-                {% if correspondance.voyage.conducteur == request.user %}
-                    <!-- Si l'utilisateur actuel est le conducteur -->
-                    <p><strong>👤 Passager :</strong> <a href="{% url 'covoiturage:public_profile' correspondance.demande.passager.username %}" style="color: var(--color-earth); font-weight: 600;">{{ correspondance.demande.passager.username }}</a></p>
-                    <p><strong>🛣️ Trajet :</strong> {{ correspondance.voyage.ville_depart }} ➔ {{ correspondance.voyage.ville_arrivee }}</p>
-                    <p><strong>📍 Lieu :</strong> {{ correspondance.voyage.lieu_ramassage|default:"Non précisé" }}</p>
-                    {% if correspondance.is_validated and correspondance.other_phone %}
-                    <p><strong>📞 Téléphone :</strong> {{ correspondance.other_phone }}</p>
-                    {% endif %}
-                {% else %}
-                    <!-- Si l'utilisateur actuel est le passager -->
-                    <p><strong>🚗 Conducteur :</strong> <a href="{% url 'covoiturage:public_profile' correspondance.voyage.conducteur.username %}" style="color: var(--color-earth); font-weight: 600;">{{ correspondance.voyage.conducteur.username }}</a></p>
-                    <p><strong>🛣️ Trajet :</strong> {{ correspondance.demande.ville_depart }} ➔ {{ correspondance.demande.ville_arrivee }}</p>
-                    {% if correspondance.is_validated and correspondance.other_phone %}
-                    <p><strong>📞 Téléphone :</strong> {{ correspondance.other_phone }}</p>
-                    {% endif %}
-                {% endif %}
-                
-                <p><strong>📌 Statut :</strong> 
-                    {% if correspondance.is_validated %}
-                        <span style="color: #2E7D32; font-weight: 800; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">Validé ✅</span>
-                    {% else %}
-                        <span style="color: #E65100; font-weight: 800; background: #FFF3E0; padding: 2px 8px; border-radius: 4px;">En attente ⏳</span>
-                    {% endif %}
-                </p>
+            {% if correspondances.object_list %}
+                {% for correspondance in correspondances %}
+                <div class="card" style="border-left: 6px solid var(--color-earth);">
+                    <h3>Match trouvé ! 🎉</h3>
 
-                {% if not correspondance.is_validated %}
-                <div class="card-actions" style="flex-wrap: wrap; gap: 10px;">
-                    {% if correspondance.voyage.conducteur == request.user %}
-                    <form method="POST" action="{% url 'covoiturage:validate_correspondance' correspondance.id %}" style="flex: 1; min-width: 120px;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-edit" style="width: 100%; background-color: var(--color-earth); color: white; border: none; cursor: pointer;">Valider ce match</button>
-                    </form>
-                    <form method="POST" action="{% url 'covoiturage:refuse_correspondance' correspondance.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-refuse">Refuser</button>
-                    </form>
+                    {% if correspondance.voyage.conducteur_id == request.user.id %}
+                        <p>
+                            <strong>👤 Passager :</strong>
+                            <a href="{% url 'covoiturage:public_profile' correspondance.demande.passager.username %}" style="color: var(--color-earth); font-weight: 600;">
+                                {{ correspondance.demande.passager.username }}
+                            </a>
+                            {% if correspondance.other_note_moyenne %}
+                                <span class="note-badge">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>🛣️ Trajet :</strong> {{ correspondance.voyage.ville_depart }} ➔ {{ correspondance.voyage.ville_arrivee }}</p>
+                        <p><strong>📍 Lieu :</strong> {{ correspondance.voyage.lieu_ramassage|default:"Non précisé" }}</p>
                     {% else %}
-                    <form method="POST" action="{% url 'covoiturage:cancel_correspondance' correspondance.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-refuse">Annuler mon intérêt</button>
-                    </form>
+                        <p>
+                            <strong>🚗 Conducteur :</strong>
+                            <a href="{% url 'covoiturage:public_profile' correspondance.voyage.conducteur.username %}" style="color: var(--color-earth); font-weight: 600;">
+                                {{ correspondance.voyage.conducteur.username }}
+                            </a>
+                            {% if correspondance.other_note_moyenne %}
+                                <span class="note-badge">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>🛣️ Trajet :</strong> {{ correspondance.demande.ville_depart }} ➔ {{ correspondance.demande.ville_arrivee }}</p>
+                    {% endif %}
+
+                    {% if correspondance.is_validated and correspondance.other_phone %}
+                        <p><strong>📞 Téléphone :</strong> {{ correspondance.other_phone }}</p>
+                    {% endif %}
+
+                    <p>
+                        <strong>📌 Statut :</strong>
+                        {% if correspondance.is_validated %}
+                            <span style="color: #2E7D32; font-weight: 800; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">Validé ✅</span>
+                        {% else %}
+                            <span style="color: #E65100; font-weight: 800; background: #FFF3E0; padding: 2px 8px; border-radius: 4px;">En attente ⏳</span>
+                        {% endif %}
+                    </p>
+
+                    {% if not correspondance.is_validated %}
+                    <div class="card-actions" style="flex-wrap: wrap; gap: 10px;">
+                        {% if correspondance.voyage.conducteur_id == request.user.id %}
+                            <form method="POST" action="{% url 'covoiturage:validate_correspondance' correspondance.id %}" style="flex: 1; min-width: 120px;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-edit" style="width: 100%; background-color: var(--color-earth); color: white; border: none; cursor: pointer;">Valider ce match</button>
+                            </form>
+                            <form method="POST" action="{% url 'covoiturage:refuse_correspondance' correspondance.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-refuse">Refuser</button>
+                            </form>
+                        {% else %}
+                            <form method="POST" action="{% url 'covoiturage:cancel_correspondance' correspondance.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-refuse">Annuler mon intérêt</button>
+                            </form>
+                        {% endif %}
+                    </div>
                     {% endif %}
                 </div>
-                {% endif %}
-            </div>
-            {% empty %}
-            <div class="empty-state">
-                <p>Aucune correspondance pour le moment. L'algorithme cherche des passagers/conducteurs pour vous ! 🔍</p>
-            </div>
-            {% endfor %}
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>Aucune correspondance pour le moment. L'algorithme cherche des passagers/conducteurs pour vous ! 🔍</p>
+                </div>
+            {% endif %}
         </div>
         {% if correspondances.paginator.num_pages > 1 %}
         <div class="pagination">

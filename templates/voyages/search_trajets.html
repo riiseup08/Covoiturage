@@ -35,6 +35,8 @@
         .pagination a, .pagination span { padding: 8px 14px; border-radius: 8px; text-decoration: none; background: #F1EFE9; color: var(--color-night); font-weight: 600; }
         .pagination a:hover { background: var(--color-earth); color: white; }
         .pagination .current { background: var(--color-earth); color: white; }
+        .btn-empty-cta { display: inline-block; margin-top: 10px; padding: 14px 28px; background: var(--color-earth); color: white; border-radius: 8px; text-decoration: none; font-weight: 700; }
+        .btn-empty-cta:hover { background: #A64426; }
     </style>
 </head>
 <body>
@@ -101,7 +103,9 @@
             </div>
             {% empty %}
             <div class="empty-state grid-span">
-                Aucun trajet ne correspond à votre recherche. Essayez d’élargir les critères ou <a href="{% url 'covoiturage:add_demande' %}">publiez une demande</a>.
+                <p style="font-size: 18px; margin-bottom: 16px;">Aucun trajet ne correspond à votre recherche.</p>
+                <p style="margin-bottom: 20px;">Essayez d’élargir les critères (dates, villes) ou publiez une demande pour être notifié quand un trajet correspond.</p>
+                <a href="{% url 'covoiturage:add_demande' %}" class="btn-empty-cta">Publier une demande de trajet</a>
             </div>
             {% endfor %}
         </div>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page introuvable - Covoit.Africa</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: var(--color-bg); color: var(--color-night); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .box { max-width: 480px; }
+        .code { font-size: 120px; font-weight: 800; line-height: 1; color: var(--color-earth); opacity: 0.9; margin-bottom: 10px; }
+        h1 { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
+        p { color: #666; margin-bottom: 28px; font-size: 16px; line-height: 1.5; }
+        a { display: inline-block; background: var(--color-earth); color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 700; }
+        a:hover { background: #A64426; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div class="code">404</div>
+        <h1>Page introuvable</h1>
+        <p>Cette page n'existe pas ou a été déplacée. Retournez à l'accueil pour continuer.</p>
+        <a href="{% url 'covoiturage:landing' %}">Retour à l'accueil</a>
+    </div>
+</body>
+</html>

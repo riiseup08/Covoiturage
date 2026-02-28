@@ -16,6 +16,15 @@ SEARCH_PAGE_SIZE = 12
 def landing_view(request):
     return render(request, 'voyages/landing.html')
 
+
+def custom_404(request, exception=None):
+    # Évite de bloquer l'utilisateur sur une page 404.
+    # Redirige vers le tableau de bord si connecté, sinon vers l'accueil.
+    if getattr(request, 'user', None) is not None and request.user.is_authenticated:
+        return redirect('covoiturage:dashboard')
+    return redirect('covoiturage:landing')
+
+
 def register_view(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
@@ -46,6 +55,16 @@ def home_view(request):
             c.other_phone = (getattr(other.profile, 'phone', None) or '').strip()
         except (Profile.DoesNotExist, AttributeError):
             c.other_phone = ''
+    from django.db.models import Avg
+    other_ids = set()
+    for c in correspondances:
+        o = c.demande.passager_id if c.voyage.conducteur_id == request.user.id else c.voyage.conducteur_id
+        other_ids.add(o)
+    notes_qs = Avis.objects.filter(utilisateur_note_id__in=other_ids).values('utilisateur_note_id').annotate(avg=Avg('note'))
+    notes_dict = {n['utilisateur_note_id']: n['avg'] for n in notes_qs}
+    for c in correspondances:
+        other_id = c.demande.passager_id if c.voyage.conducteur_id == request.user.id else c.voyage.conducteur_id
+        c.other_note_moyenne = notes_dict.get(other_id)
 
     paginator_v = Paginator(voyages, PAGE_SIZE)
     paginator_d = Paginator(demandes, PAGE_SIZE)
@@ -58,6 +77,11 @@ def home_view(request):
         'voyages': paginator_v.get_page(page_v),
         'demandes': paginator_d.get_page(page_d),
         'correspondances': paginator_c.get_page(page_c),
+        'stats': {
+            'total_voyages': voyages.count(),
+            'total_demandes': demandes.count(),
+            'total_correspondances': correspondances.count(),
+        },
     }
     return render(request, 'voyages/dashboard.html', context)
 
