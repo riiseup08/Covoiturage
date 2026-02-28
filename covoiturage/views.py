@@ -7,8 +7,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
 from .models import Voyage, Demande, Correspondance, Profile, Avis
-from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm
-from django.contrib.auth.forms import UserCreationForm
+from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm
 
 PAGE_SIZE = 10
 SEARCH_PAGE_SIZE = 12
@@ -27,15 +26,14 @@ def custom_404(request, exception=None):
 
 def register_view(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # La création du profil est gérée par le signal dans models.py
             login(request, user)
             messages.success(request, "Inscription réussie ! Bienvenue sur Covoit.Africa.")
             return redirect('covoiturage:dashboard')
     else:
-        form = UserCreationForm()
+        form = UserRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})
 
 @login_required

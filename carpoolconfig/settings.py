@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['covoiturage-8gqc.onrender.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['covoiturage-0m0x.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -131,3 +131,18 @@ LOGIN_REDIRECT_URL = 'covoiturage:dashboard'
 
 # Rediriger vers le landing après la déconnexion
 LOGOUT_REDIRECT_URL = 'covoiturage:landing'
+
+# Connexion avec email ou nom d'utilisateur
+AUTHENTICATION_BACKENDS = [
+    'covoiturage.backends.EmailOrUsernameBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# Email (mot de passe oublié)
+# En dev : les emails s'affichent dans la console. En prod : configurer SMTP.
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@covoit.africa')
+SERVER_EMAIL = DEFAULT_FROM_EMAIL

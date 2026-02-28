@@ -1,6 +1,34 @@
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 from .models import Voyage, Demande, Profile, Avis
 from django.utils import timezone
+
+
+class UserRegistrationForm(UserCreationForm):
+    """Inscription avec email obligatoire."""
+    email = forms.EmailField(
+        required=True,
+        label="Adresse email",
+        widget=forms.EmailInput(attrs={'placeholder': 'exemple@email.com', 'autocomplete': 'email'})
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Un compte existe déjà avec cette adresse email.")
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email'].strip().lower()
+        if commit:
+            user.save()
+        return user
 
 class AvisForm(forms.ModelForm):
     class Meta:
