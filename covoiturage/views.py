@@ -29,9 +29,8 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
-            messages.success(request, "Inscription réussie ! Bienvenue sur Covoit.Africa.")
-            return redirect('covoiturage:dashboard')
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            return redirect('covoiturage:dashboard')  
     else:
         form = UserRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})

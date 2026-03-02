@@ -33,9 +33,18 @@ _ALLOWED = os.environ.get('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = [h.strip() for h in _ALLOWED.split(',') if h.strip()] or [
     'localhost', '127.0.0.1', 'covoiturage-0m0x.onrender.com'
 ]
+
 # Requis en HTTPS (ex. Render) pour que les formulaires (inscription, connexion) passent.
-_CSRF_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
-CSRF_TRUSTED_ORIGINS = [o.strip() for o in _CSRF_ORIGINS.split(',') if o.strip()]
+_CSRF_ORIGINS_RAW = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+_csrf_list = []
+for _origin in _CSRF_ORIGINS_RAW.split(','):
+    _origin = _origin.strip()
+    if not _origin:
+        continue
+    if not (_origin.startswith('http://') or _origin.startswith('https://')):
+        _origin = 'https://' + _origin
+    _csrf_list.append(_origin)
+CSRF_TRUSTED_ORIGINS = _csrf_list
 
 
 # Application definition
@@ -148,16 +157,30 @@ AUTHENTICATION_BACKENDS = [
 # Email (mot de passe oublié, erreurs admin)
 # En prod : définir EMAIL_BACKEND + variables SMTP dans les variables d'environnement.
 # Sans config SMTP en prod : aucun envoi (pas de crash).
+
+def _env_int(name, default):
+    """Convertit une variable d'env en int, avec valeur par défaut sûre."""
+    value = os.environ.get(name)
+    if value is None or value == '':
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
 _EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
 if _EMAIL_BACKEND:
     EMAIL_BACKEND = _EMAIL_BACKEND
     EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
-    EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587') or '587')
-    EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'true').lower() in ('1', 'true', 'yes')
-    EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() in ('1', 'true', 'yes')
+    EMAIL_PORT = _env_int('EMAIL_PORT', 587)
+    _tls = os.environ.get('EMAIL_USE_TLS', 'true')
+    _ssl = os.environ.get('EMAIL_USE_SSL', 'false')
+    EMAIL_USE_TLS = str(_tls).strip().lower() in ('1', 'true', 'yes')
+    EMAIL_USE_SSL = str(_ssl).strip().lower() in ('1', 'true', 'yes')
     EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-    EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '10') or '10')
+    EMAIL_TIMEOUT = _env_int('EMAIL_TIMEOUT', 10)
 else:
     # Pas de SMTP configuré : en dev = console, en prod = dummy (évite 500)
     EMAIL_BACKEND = (
