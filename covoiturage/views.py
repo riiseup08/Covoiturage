@@ -90,7 +90,7 @@ def profile_view(request):
         profile = Profile.objects.create(user=request.user)
 
     if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=profile)
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
             messages.success(request, 'Votre profil a été mis à jour avec succès.')
@@ -113,7 +113,7 @@ def public_profile_view(request, username):
 @login_required
 def add_voyage(request):
     if request.method == 'POST':
-        form = VoyageForm(request.POST)
+        form = VoyageForm(request.POST, request.FILES)
         if form.is_valid():
             voyage = form.save(commit=False)
             voyage.conducteur = request.user
@@ -142,7 +142,7 @@ def add_demande(request):
 def edit_voyage(request, voyage_id):
     voyage = get_object_or_404(Voyage, id=voyage_id, conducteur=request.user)
     if request.method == 'POST':
-        form = VoyageForm(request.POST, instance=voyage)
+        form = VoyageForm(request.POST, request.FILES, instance=voyage)
         if form.is_valid():
             form.save()
             messages.success(request, 'Trajet modifié avec succès.')

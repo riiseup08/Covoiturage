@@ -46,6 +46,7 @@ class VoyageForm(forms.ModelForm):
             'ville_depart', 'lieu_ramassage', 'ville_arrivee',
             'date_depart', 'date_arrivee', 'places_disponibles', 'prix_par_place',
             'plaque_immatriculation', 'modele_voiture', 'type_bagage_accepte',
+            'photo_vehicule',
         ]
         widgets = {
             'date_depart': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
@@ -107,4 +108,4 @@ class DemandeForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'phone', 'is_driver']
+        fields = ['bio', 'phone', 'is_driver', 'photo_profil']

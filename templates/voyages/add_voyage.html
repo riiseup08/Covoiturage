@@ -64,7 +64,7 @@
         </div>
         {% endif %}
         
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             
             <div class="form-row">
@@ -143,6 +143,11 @@
                     <label for="id_type_bagage_accepte">Bagage accepté</label>
                     {{ form.type_bagage_accepte }}
                     {{ form.type_bagage_accepte.errors }}
+                </div>
+                <div class="form-group {% if form.photo_vehicule.errors %}field-error{% endif %}">
+                    <label for="id_photo_vehicule">Photo du véhicule (optionnelle)</label>
+                    {{ form.photo_vehicule }}
+                    {{ form.photo_vehicule.errors }}
                 </div>
             </div>
 
