@@ -46,6 +46,7 @@ class VoyageForm(forms.ModelForm):
             'ville_depart', 'lieu_ramassage', 'ville_arrivee',
             'date_depart', 'date_arrivee', 'places_disponibles', 'prix_par_place',
             'plaque_immatriculation', 'modele_voiture', 'type_bagage_accepte',
+            'photo_voiture',
         ]
         widgets = {
             'date_depart': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
@@ -54,6 +55,7 @@ class VoyageForm(forms.ModelForm):
             'plaque_immatriculation': forms.TextInput(attrs={'placeholder': 'Ex: AB 1234 CD'}),
             'modele_voiture': forms.TextInput(attrs={'placeholder': 'Ex: Toyota Corolla, Peugeot 208...'}),
             'type_bagage_accepte': forms.Select(attrs={'class': 'form-select'}),
+            'photo_voiture': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
         }
 
     def clean(self):
@@ -107,4 +109,7 @@ class DemandeForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'phone', 'is_driver']
+        fields = ['bio', 'phone', 'is_driver', 'photo_profil']
+        widgets = {
+            'photo_profil': forms.ClearableFileInput(attrs={'accept': 'image/*'}),
+        }

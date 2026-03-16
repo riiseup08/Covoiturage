@@ -8,6 +8,10 @@ class Profile(models.Model):
     bio = models.TextField(max_length=500, blank=True)
     phone = models.CharField(max_length=20, blank=True)
     is_driver = models.BooleanField(default=False)
+    photo_profil = models.ImageField(
+        upload_to='photos/profils/', blank=True, null=True,
+        help_text="Photo de profil (optionnelle)"
+    )
 
     def __str__(self):
         return f"Profil de {self.user.username}"
@@ -53,6 +57,10 @@ class Voyage(models.Model):
     est_termine = models.BooleanField(
         default=False,
         help_text="Coché quand le trajet est terminé (masqué des recherches)"
+    )
+    photo_voiture = models.ImageField(
+        upload_to='photos/voitures/', blank=True, null=True,
+        help_text="Photo du véhicule (optionnelle)"
     )
 
     def __str__(self):

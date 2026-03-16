@@ -133,6 +133,9 @@
                 {% if voyage.plaque_immatriculation or voyage.modele_voiture %}
                 <p><strong>🚗 Véhicule :</strong> {{ voyage.modele_voiture|default:"—" }} · Plaque {{ voyage.plaque_immatriculation|default:"—" }}</p>
                 <p><strong>🧳 Bagage accepté :</strong> {{ voyage.get_type_bagage_accepte_display }}</p>
+                {% if voyage.photo_voiture %}
+                <p><img src="{{ voyage.photo_voiture.url }}" alt="Photo du véhicule" style="max-width: 100%; border-radius: 8px; margin-top: 5px;"></p>
+                {% endif %}
                 {% endif %}
                 
                 <div class="card-actions">
