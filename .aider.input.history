@@ -1,0 +1,16 @@
+
+# 2026-03-15 22:33:49.912469
++y
+
+# 2026-03-15 22:36:20.485353
++n
+
+# 2026-03-15 22:37:44.559270
++Replace email authentication with phone number authentication in the covoiturage Django project.
++Users should register and login with their phone number instead of email.
++Add a custom User model with phone_number field as USERNAME_FIELD.
++Include phone number validation (format: +1XXXXXXXXXX or local format).
++
+
+# 2026-03-15 22:56:32.038591
++y
