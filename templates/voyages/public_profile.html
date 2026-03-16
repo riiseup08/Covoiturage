@@ -30,6 +30,11 @@
             </div>
         </div>
         <div class="card">
+            {% if profile.photo_profil %}
+            <div style="text-align:center; margin-bottom:20px;">
+                <img src="{{ profile.photo_profil.url }}" alt="Photo de {{ profile.user.username }}" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--color-earth);">
+            </div>
+            {% endif %}
             <h2>{{ profile.user.username }}</h2>
             {% if note_moyenne is not None %}
             <p style="margin-bottom: 12px;"><strong>Note moyenne :</strong> <span style="color: var(--color-earth); font-weight: 800;">{{ note_moyenne|floatformat:1 }}</span> / 5 ({{ avis_count }} avis)</p>
