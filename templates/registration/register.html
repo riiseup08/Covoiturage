@@ -128,6 +128,11 @@
             width: 100%;
         }
 
+        .form-container .form-group {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
         .form-container label {
             display: block;
             font-weight: 600;
@@ -138,7 +143,8 @@
 
         .form-container input[type="text"],
         .form-container input[type="password"],
-        .form-container input[type="email"] {
+        .form-container input[type=\"email\"],
+        .form-container input[type=\"tel\"] {
             width: 100%;
             padding: 15px;
             border: 2px solid #EBE5D9;
@@ -249,7 +255,58 @@
                 <form method="POST">
                     {% csrf_token %}
                     
-                    {{ form.as_p }}
+                    <!-- Username -->
+                    <div class=\"form-group\">
+                        {{ form.username.label_tag }}
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <ul class=\"errorlist\">
+                                {% for error in form.username.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class=\"form-group\">
+                        {{ form.phone.label_tag }}
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                            <ul class=\"errorlist\">
+                                {% for error in form.phone.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        <small class=\"helptext\">Format: +233XXXXXXXXXX or 0XXXXXXXXXX</small>
+                    </div>
+
+                    <!-- Password 1 -->
+                    <div class=\"form-group\">
+                        {{ form.password1.label_tag }}
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <ul class=\"errorlist\">
+                                {% for error in form.password1.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password 2 -->
+                    <div class=\"form-group\">
+                        {{ form.password2.label_tag }}
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <ul class=\"errorlist\">
+                                {% for error in form.password2.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
                     
                     <button type="submit" class="btn-submit">S'inscrire</button>
                 </form>

@@ -142,6 +142,11 @@ SHORT_DATE_FORMAT = 'd/m/Y'
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Media files (User uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Rediriger vers le dashboard après la connexion
 LOGIN_REDIRECT_URL = 'covoiturage:dashboard'
 

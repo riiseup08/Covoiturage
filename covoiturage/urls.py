@@ -4,7 +4,11 @@ from .views import (
     add_voyage, add_demande, edit_voyage, delete_voyage,
     edit_demande, delete_demande, validate_correspondance, refuse_correspondance,
     cancel_correspondance, mark_voyage_termine, search_trajets,
-    avis_list_view, add_avis_view
+    avis_list_view, add_avis_view,
+    # New views for phone OTP and photos
+    verify_phone_request, verify_phone_otp, upload_profile_photo, upload_car_photo,
+    verify_id, verify_driver_license, verification_status,
+    confirm_trip_pickup, confirm_trip_dropoff
 )
 
 app_name = 'covoiturage'
@@ -14,6 +18,23 @@ urlpatterns = [
     path('dashboard/', home_view, name='dashboard'),
     path('search/', search_trajets, name='search_trajets'),
     path('accounts/register/', register_view, name='register'),
+    
+    # Phone verification
+    path('verify-phone/', verify_phone_request, name='verify_phone_request'),
+    path('verify-phone/otp/', verify_phone_otp, name='verify_phone_otp'),
+    
+    # Photo uploads
+    path('profile/photo/', upload_profile_photo, name='upload_profile_photo'),
+    path('car-photo/', upload_car_photo, name='upload_car_photo'),
+    
+    # Verification
+    path('verify-id/', verify_id, name='verify_id'),
+    path('verify-driver-license/', verify_driver_license, name='verify_driver_license'),
+    path('verification-status/', verification_status, name='verification_status'),
+    
+    # Trip validation
+    path('trip/<int:trip_validation_id>/confirm-pickup/', confirm_trip_pickup, name='confirm_trip_pickup'),
+    path('trip/<int:trip_validation_id>/confirm-dropoff/', confirm_trip_dropoff, name='confirm_trip_dropoff'),
     
     path('profile/', profile_view, name='profile'),
     path('profile/<str:username>/', public_profile_view, name='public_profile'),

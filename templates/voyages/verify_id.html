@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verify Your ID{% endblock %}
+
+{% block content %}
+<div class="verify-container">
+    <div class="verify-card">
+        <div class="verify-header">
+            <h2>Identity Verification</h2>
+            <p>Help us verify your identity to ensure platform safety</p>
+        </div>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="verify-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.id_type.id_for_label }}">{{ form.id_type.label }}</label>
+                {{ form.id_type }}
+                {% if form.id_type.errors %}
+                    <small class="error">{{ form.id_type.errors.0 }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.id_number.id_for_label }}">{{ form.id_number.label }}</label>
+                {{ form.id_number }}
+                {% if form.id_number.errors %}
+                    <small class="error">{{ form.id_number.errors.0 }}</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.id_photo.id_for_label }}">{{ form.id_photo.label }}</label>
+                <div class="upload-box">
+                    {{ form.id_photo }}
+                    <p><span class="upload-icon">🪪</span><br>Click to upload ID photo</p>
+                    <small>JPG, PNG or GIF (Max 5MB)</small>
+                </div>
+                {% if form.id_photo.errors %}
+                    <small class="error">{{ form.id_photo.errors.0 }}</small>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit for Verification</button>
+        </form>
+
+        <div class="info-box">
+            <h4>About ID Verification</h4>
+            <ul>
+                <li>Your ID will be verified by our team</li>
+                <li>We ensure your data is kept secure and private</li>
+                <li>Verification typically takes 24-48 hours</li>
+                <li>You'll receive a notification when verified</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    .verify-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #D95D39 0%, #F2A65A 100%);
+        padding: 20px;
+    }
+
+    .verify-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        max-width: 550px;
+        width: 100%;
+    }
+
+    .verify-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .verify-header h2 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 10px;
+    }
+
+    .verify-header p {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .verify-form {
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #1a1a1a;
+    }
+
+    .form-group select,
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+        font-family: inherit;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus {
+        outline: none;
+        border-color: #D95D39;
+    }
+
+    .upload-box {
+        border: 2px dashed #D95D39;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        background: #faf6ed;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .upload-box:hover {
+        border-color: #A64426;
+        background: #f2f0ea;
+    }
+
+    .upload-box input {
+        display: none;
+    }
+
+    .upload-icon {
+        font-size: 40px;
+    }
+
+    .upload-box p {
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 10px 0 5px 0;
+    }
+
+    .upload-box small {
+        color: #999;
+        display: block;
+    }
+
+    .form-group .error {
+        color: #dc3545;
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background-color: #D95D39;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #A64426;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(217, 93, 57, 0.3);
+    }
+
+    .info-box {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #D95D39;
+    }
+
+    .info-box h4 {
+        color: #1a1a1a;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .info-box ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .info-box li {
+        color: #666;
+        font-size: 13px;
+        padding: 5px 0;
+        padding-left: 20px;
+        position: relative;
+    }
+
+    .info-box li:before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: #D95D39;
+        font-weight: bold;
+    }
+
+    .messages {
+        margin-bottom: 20px;
+    }
+
+    .alert {
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Verification Status{% endblock %}
+
+{% block content %}
+<div class="status-container">
+    <div class="status-card">
+        <div class="status-header">
+            <h2>Verification Status</h2>
+            <p>Your trust and safety</p>
+        </div>
+
+        <div class="status-overview">
+            <div class="trust-score">
+                <div class="score-circle">
+                    <span class="score">{{ profile.trust_score }}/100</span>
+                </div>
+                <p>Trust Score</p>
+            </div>
+        </div>
+
+        <div class="verification-items">
+            <div class="verification-item {% if profile.phone_verified %}verified{% endif %}">
+                <div class="item-icon">📱</div>
+                <div class="item-info">
+                    <h3>Phone Verification</h3>
+                    <p>{% if profile.phone_verified %}{{ profile.phone }}{% else %}Not verified{% endif %}</p>
+                </div>
+                <div class="item-status">
+                    {% if profile.phone_verified %}
+                        <span class="badge badge-success">✓ Verified</span>
+                    {% else %}
+                        <span class="badge badge-warning">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="verification-item {% if profile.id_verified %}verified{% endif %}">
+                <div class="item-icon">🪪</div>
+                <div class="item-info">
+                    <h3>Identity Verification</h3>
+                    <p>{% if profile.id_verified %}{{ profile.id_type }}{% else %}Not verified{% endif %}</p>
+                </div>
+                <div class="item-status">
+                    {% if profile.id_verified %}
+                        <span class="badge badge-success">✓ Verified</span>
+                    {% elif profile.id_photo %}
+                        <span class="badge badge-info">Under Review</span>
+                    {% else %}
+                        <span class="badge badge-warning">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if profile.is_driver %}
+            <div class="verification-item {% if profile.driver_license_verified %}verified{% endif %}">
+                <div class="item-icon">🚗</div>
+                <div class="item-info">
+                    <h3>Driver License</h3>
+                    <p>{% if profile.driver_license_verified %}{{ profile.driver_license_number }}{% else %}Not verified{% endif %}</p>
+                </div>
+                <div class="item-status">
+                    {% if profile.driver_license_verified %}
+                        <span class="badge badge-success">✓ Verified</span>
+                    {% elif profile.driver_license_photo %}
+                        <span class="badge badge-info">Under Review</span>
+                    {% else %}
+                        <span class="badge badge-warning">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="verification-item {% if profile.profile_photo %}verified{% endif %}">
+                <div class="item-icon">📸</div>
+                <div class="item-info">
+                    <h3>Profile Photo</h3>
+                    <p>{% if profile.profile_photo %}Uploaded{% else %}Not uploaded{% endif %}</p>
+                </div>
+                <div class="item-status">
+                    {% if profile.profile_photo %}
+                        <span class="badge badge-success">✓ Done</span>
+                    {% else %}
+                        <span class="badge badge-warning">Required</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="status-info">
+            <h3>Verification Status: <strong>{{ verification_status_display }}</strong></h3>
+            {% if profile.verification_notes %}
+                <p class="notes">{{ profile.verification_notes }}</p>
+            {% endif %}
+        </div>
+
+        <div class="actions">
+            {% if not can_ride %}
+                <a href="{% url 'covoiturage:verify_phone_request' %}" class="btn btn-primary">Complete Phone Verification</a>
+            {% endif %}
+            
+            {% if not can_drive %}
+                <a href="{% url 'covoiturage:verify_id' %}" class="btn btn-primary">Complete ID Verification</a>
+            {% endif %}
+
+            <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+
+        <div class="info-box">
+            <h4>Why Verification Matters</h4>
+            <p>Verification helps us create a safer community by ensuring users are who they claim to be. This protects both riders and drivers from fraud and misuse of the platform.</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-container {
+        padding: 30px 20px;
+        background: #faf6ed;
+        min-height: 100vh;
+    }
+
+    .status-card {
+        max-width: 700px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+    }
+
+    .status-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .status-header h2 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 5px;
+    }
+
+    .status-header p {
+        color: #999;
+        font-size: 14px;
+    }
+
+    .status-overview {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .trust-score {
+        display: inline-block;
+    }
+
+    .score-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #D95D39 0%, #F2A65A 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        box-shadow: 0 5px 15px rgba(217, 93, 57, 0.2);
+    }
+
+    .score {
+        color: white;
+        font-size: 32px;
+        font-weight: 700;
+    }
+
+    .trust-score p {
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+
+    .verification-items {
+        margin-bottom: 40px;
+    }
+
+    .verification-item {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        transition: all 0.3s;
+    }
+
+    .verification-item.verified {
+        background: #f0fdf4;
+        border-color: #22c55e;
+    }
+
+    .verification-item:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .item-icon {
+        font-size: 32px;
+        min-width: 50px;
+        text-align: center;
+    }
+
+    .item-info {
+        flex: 1;
+    }
+
+    .item-info h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 5px;
+    }
+
+    .item-info p {
+        color: #999;
+        font-size: 13px;
+    }
+
+    .item-status {
+        text-align: right;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: #22c55e;
+        color: white;
+    }
+
+    .badge-warning {
+        background: #fbbf24;
+        color: #78350f;
+    }
+
+    .badge-info {
+        background: #60a5fa;
+        color: white;
+    }
+
+    .status-info {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+        border-left: 4px solid #D95D39;
+    }
+
+    .status-info h3 {
+        color: #1a1a1a;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .status-info .notes {
+        color: #666;
+        font-size: 13px;
+        margin-top: 10px;
+        font-style: italic;
+    }
+
+    .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 30px;
+    }
+
+    .btn {
+        flex: 1;
+        min-width: 150px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background-color: #D95D39;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #A64426;
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background-color: #e5e5e5;
+        color: #1a1a1a;
+    }
+
+    .btn-secondary:hover {
+        background-color: #d0d0d0;
+    }
+
+    .info-box {
+        background: #f0f9ff;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #60a5fa;
+    }
+
+    .info-box h4 {
+        color: #1a1a1a;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .info-box p {
+        color: #666;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}

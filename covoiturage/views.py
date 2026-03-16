@@ -6,8 +6,15 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
-from .models import Voyage, Demande, Correspondance, Profile, Avis
-from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm
+from django.http import JsonResponse
+import re
+from .models import Voyage, Demande, Correspondance, Profile, Avis, PhoneOTP, TripValidation
+from .forms import (
+    VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm,
+    PhoneOTPRequestForm, PhoneOTPVerificationForm, ProfilePhotoUploadForm,
+    CarPhotoUploadForm, IDVerificationForm, DriverLicenseVerificationForm
+)
+from .sms_utils import request_phone_otp as send_otp, verify_otp
 
 PAGE_SIZE = 10
 SEARCH_PAGE_SIZE = 12
@@ -29,8 +36,16 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            # Store phone in session for next step
+            phone = form.cleaned_data['phone']
+            # Clean phone number same way as form
+            phone = re.sub(r'[\s\-\(\)\.]+', '', phone)
+            request.session['registration_phone'] = phone
+            request.session['registration_user_id'] = user.id
+            # Log user in
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            return redirect('covoiturage:dashboard')  
+            # Redirect to phone verification
+            return redirect('covoiturage:verify_phone_request')  
     else:
         form = UserRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})
@@ -370,3 +385,294 @@ def add_avis_view(request, voyage_id, user_id):
         form = AvisForm()
     context = {'form': form, 'voyage': voyage, 'utilisateur_note': utilisateur_note}
     return render(request, 'voyages/add_avis.html', context)
+
+
+# ========== NEW VIEWS FOR PHONE OTP & PHOTOS ==========
+
+@login_required
+def verify_phone_request(request):
+    """Request OTP for phone verification"""
+    profile = request.user.profile
+    
+    if profile.phone_verified:
+        messages.info(request, "Your phone is already verified.")
+        return redirect('covoiturage:dashboard')
+    
+    if request.method == 'POST':
+        form = PhoneOTPRequestForm(request.POST)
+        if form.is_valid():
+            phone = form.cleaned_data['phone']
+            result = send_otp(phone, request.user)
+            
+            if result['success']:
+                request.session['otp_id'] = result['otp_id']
+                request.session['phone_number'] = phone
+                messages.success(request, result['message'])
+                return redirect('covoiturage:verify_phone_otp')
+            else:
+                messages.error(request, result['message'])
+    else:
+        form = PhoneOTPRequestForm()
+    
+    return render(request, 'registration/verify_phone_request.html', {'form': form})
+
+
+@login_required
+def verify_phone_otp(request):
+    """Verify OTP code for phone"""
+    otp_id = request.session.get('otp_id')
+    phone_number = request.session.get('phone_number')
+    
+    if not otp_id or not phone_number:
+        messages.error(request, "Phone verification session expired. Please try again.")
+        return redirect('covoiturage:verify_phone_request')
+    
+    if request.method == 'POST':
+        form = PhoneOTPVerificationForm(request.POST)
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            result = verify_otp(otp_id, otp_code)
+            
+            if result['success']:
+                # Update profile
+                profile = request.user.profile
+                profile.phone = phone_number
+                profile.phone_verified = True
+                profile.save()
+                
+                # Clean up session
+                del request.session['otp_id']
+                del request.session['phone_number']
+                
+                messages.success(request, "Phone verified successfully!")
+                return redirect('covoiturage:upload_profile_photo')
+            else:
+                messages.error(request, result['message'])
+    else:
+        form = PhoneOTPVerificationForm()
+    
+    context = {
+        'form': form,
+        'phone_number': phone_number,
+    }
+    return render(request, 'registration/verify_phone_otp.html', context)
+
+
+@login_required
+def upload_profile_photo(request):
+    """Upload profile photo"""
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        form = ProfilePhotoUploadForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile photo updated successfully!")
+            return redirect('covoiturage:upload_car_photo')
+    else:
+        form = ProfilePhotoUploadForm(instance=profile)
+    
+    context = {
+        'form': form,
+        'title': 'Upload Profile Photo',
+        'current_photo': profile.profile_photo,
+    }
+    return render(request, 'voyages/upload_photo.html', context)
+
+
+@login_required
+def upload_car_photo(request):
+    """Upload car photo"""
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        form = CarPhotoUploadForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Car photo uploaded successfully!")
+            return redirect('covoiturage:verify_id')
+    else:
+        form = CarPhotoUploadForm(instance=profile)
+    
+    context = {
+        'form': form,
+        'title': 'Upload Car Photo',
+        'current_photo': profile.car_photo,
+    }
+    return render(request, 'voyages/upload_photo.html', context)
+
+
+@login_required
+def verify_id(request):
+    """Upload ID for verification"""
+    profile = request.user.profile
+    
+    if profile.id_verified:
+        messages.info(request, "Your ID is already verified.")
+        return redirect('covoiturage:dashboard')
+    
+    if request.method == 'POST':
+        form = IDVerificationForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            profile.refresh_from_db()
+            profile.verification_status = 'pending'
+            profile.save()
+            messages.success(request, "ID submitted for verification. Our team will review it shortly.")
+            return redirect('covoiturage:verify_driver_license')
+    else:
+        form = IDVerificationForm(instance=profile)
+    
+    context = {
+        'form': form,
+        'title': 'Upload ID for Verification',
+    }
+    return render(request, 'voyages/verify_id.html', context)
+
+
+@login_required
+def verify_driver_license(request):
+    """Upload driver's license for verification"""
+    profile = request.user.profile
+    
+    if not profile.is_driver:
+        messages.info(request, "Driver license verification is only for drivers.")
+        return redirect('covoiturage:dashboard')
+    
+    if profile.driver_license_verified:
+        messages.info(request, "Your driver's license is already verified.")
+        return redirect('covoiturage:dashboard')
+    
+    if request.method == 'POST':
+        form = DriverLicenseVerificationForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            profile.refresh_from_db()
+            if profile.verification_status != 'pending':
+                profile.verification_status = 'pending'
+                profile.save()
+            messages.success(request, "Driver's license submitted for verification.")
+            return redirect('covoiturage:dashboard')
+    else:
+        form = DriverLicenseVerificationForm(instance=profile)
+    
+    context = {
+        'form': form,
+        'title': 'Upload Driver\'s License',
+    }
+    return render(request, 'voyages/verify_driver_license.html', context)
+
+
+@login_required
+def verification_status(request):
+    """View verification status"""
+    profile = request.user.profile
+    
+    context = {
+        'profile': profile,
+        'verification_status_display': dict(Profile.VERIFICATION_STATUS_CHOICES).get(profile.verification_status),
+        'can_drive': profile.is_driver and profile.driver_license_verified and profile.verification_status == 'verified',
+        'can_ride': profile.phone_verified,
+    }
+    return render(request, 'voyages/verification_status.html', context)
+
+
+@login_required
+def confirm_trip_pickup(request, trip_validation_id):
+    """Confirm pickup for a trip"""
+    validation = get_object_or_404(TripValidation, id=trip_validation_id)
+    voyage = validation.voyage
+    
+    # Check permissions
+    is_driver = voyage.conducteur == request.user
+    is_passenger = validation.passenger == request.user
+    
+    if not (is_driver or is_passenger):
+        messages.error(request, "You don't have permission to confirm this pickup.")
+        return redirect('covoiturage:dashboard')
+    
+    if request.method == 'POST':
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+        
+        try:
+            latitude = float(latitude) if latitude else None
+            longitude = float(longitude) if longitude else None
+        except (ValueError, TypeError):
+            latitude = longitude = None
+        
+        if is_driver:
+            validation.pickup_confirmed_by_driver = True
+            validation.pickup_latitude = latitude
+            validation.pickup_longitude = longitude
+            messages.success(request, "Pickup confirmed!")
+        else:
+            validation.pickup_confirmed_by_passenger = True
+            messages.success(request, "You confirmed passenger pickup!")
+        
+        validation.save()
+        
+        # Check if both confirmed
+        if validation.pickup_confirmed_by_driver and validation.pickup_confirmed_by_passenger:
+            voyage.status = 'ongoing'
+            voyage.driver_confirmed_pickup = True
+            voyage.save()
+        
+        return redirect('covoiturage:dashboard')
+    
+    context = {
+        'validation': validation,
+        'voyage': voyage,
+    }
+    return render(request, 'voyages/confirm_trip_pickup.html', context)
+
+
+@login_required
+def confirm_trip_dropoff(request, trip_validation_id):
+    """Confirm dropoff for a trip"""
+    validation = get_object_or_404(TripValidation, id=trip_validation_id)
+    voyage = validation.voyage
+    
+    # Check permissions
+    is_driver = voyage.conducteur == request.user
+    is_passenger = validation.passenger == request.user
+    
+    if not (is_driver or is_passenger):
+        messages.error(request, "You don't have permission to confirm this dropoff.")
+        return redirect('covoiturage:dashboard')
+    
+    if request.method == 'POST':
+        latitude = request.POST.get('latitude')
+        longitude = request.POST.get('longitude')
+        
+        try:
+            latitude = float(latitude) if latitude else None
+            longitude = float(longitude) if longitude else None
+        except (ValueError, TypeError):
+            latitude = longitude = None
+        
+        if is_driver:
+            validation.dropoff_confirmed_by_driver = True
+            validation.dropoff_latitude = latitude
+            validation.dropoff_longitude = longitude
+            messages.success(request, "Dropoff confirmed!")
+        else:
+            validation.dropoff_confirmed_by_passenger = True
+            messages.success(request, "You confirmed passenger dropoff!")
+        
+        validation.save()
+        
+        # Check if both confirmed
+        if validation.dropoff_confirmed_by_driver and validation.dropoff_confirmed_by_passenger:
+            voyage.status = 'completed'
+            voyage.est_termine = True
+            voyage.driver_confirmed_dropoff = True
+            voyage.save()
+        
+        return redirect('covoiturage:dashboard')
+    
+    context = {
+        'validation': validation,
+        'voyage': voyage,
+    }
+    return render(request, 'voyages/confirm_trip_dropoff.html', context)

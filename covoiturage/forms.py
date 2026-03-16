@@ -1,31 +1,48 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Voyage, Demande, Profile, Avis
+from .models import Voyage, Demande, Profile, Avis, PhoneOTP, TripValidation
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+import re
 
 
 class UserRegistrationForm(UserCreationForm):
-    """Inscription avec email obligatoire."""
-    email = forms.EmailField(
+    """Registration with phone number verification (like Uber/Lyft)"""
+    phone = forms.CharField(
+        max_length=20,
         required=True,
-        label="Adresse email",
-        widget=forms.EmailInput(attrs={'placeholder': 'exemple@email.com', 'autocomplete': 'email'})
+        label="Phone Number",
+        widget=forms.TextInput(attrs={
+            'placeholder': '+233XXXXXXXXXX or 0XXXXXXXXXX',
+            'type': 'tel',
+            'autocomplete': 'tel'
+        })
     )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'password1', 'password2')
 
-    def clean_email(self):
-        email = self.cleaned_data.get('email', '').strip().lower()
-        if User.objects.filter(email=email).exists():
-            raise forms.ValidationError("Un compte existe déjà avec cette adresse email.")
-        return email
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone', '').strip()
+        # Remove common separators and keep only digits
+        phone = re.sub(r'[\s\-\(\)\.]+', '', phone)
+        
+        # Check minimum length (10 digits)
+        if len(phone) < 10:
+            raise ValidationError("Phone number must be at least 10 digits")
+        
+        # Check if already registered
+        if Profile.objects.filter(phone=phone, phone_verified=True).exists():
+            raise ValidationError("This phone number is already registered. Please login or use a different number.")
+        
+        return phone
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data['email'].strip().lower()
+        # Use phone as email temporarily (required by Django User model)
+        user.email = self.cleaned_data['phone'].replace('+', '').replace('-', '') + '@covoiturage.local'
         if commit:
             user.save()
         return user
@@ -97,6 +114,202 @@ class DemandeForm(forms.ModelForm):
         if date_voyage and date_voyage < timezone.now().date():
             raise forms.ValidationError("La date de voyage ne peut pas être dans le passé.")
         return date_voyage
+
+
+# ========== NEW FORMS FOR PHONE OTP & PHOTOS ==========
+
+class PhoneOTPRequestForm(forms.Form):
+    """Request OTP for phone verification"""
+    phone = forms.CharField(
+        max_length=20,
+        label="Phone Number",
+        widget=forms.TextInput(attrs={
+            'placeholder': '+233XXXXXXXXXX or 0XXXXXXXXXX',
+            'type': 'tel',
+            'autocomplete': 'tel'
+        })
+    )
+    
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone', '').strip()
+        # Remove common separators and keep only digits
+        phone = re.sub(r'[\s\-\(\)\.]+', '', phone)
+        
+        # Check minimum length (10 digits)
+        if len(phone) < 10:
+            raise ValidationError("Phone number must be at least 10 digits")
+        
+        # Check if already verified
+        from .models import Profile
+        if Profile.objects.filter(phone=phone, phone_verified=True).exists():
+            raise ValidationError("This phone number is already registered and verified")
+        
+        return phone
+
+
+class PhoneOTPVerificationForm(forms.Form):
+    """Verify OTP code"""
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        label="Verification Code",
+        widget=forms.TextInput(attrs={
+            'placeholder': '000000',
+            'type': 'text',
+            'inputmode': 'numeric',
+            'maxlength': '6',
+            'autocomplete': 'one-time-code'
+        })
+    )
+    
+    def clean_otp_code(self):
+        otp = self.cleaned_data.get('otp_code', '').strip()
+        if not otp.isdigit():
+            raise ValidationError("OTP must contain only numbers")
+        return otp
+
+
+class ProfilePhotoUploadForm(forms.ModelForm):
+    """Upload profile photo"""
+    class Meta:
+        model = Profile
+        fields = ['profile_photo']
+        widgets = {
+            'profile_photo': forms.FileInput(attrs={
+                'accept': 'image/jpeg,image/png,image/gif',
+                'class': 'form-control'
+            })
+        }
+    
+    def clean_profile_photo(self):
+        photo = self.cleaned_data.get('profile_photo')
+        if photo:
+            # Check file size (max 5MB)
+            if photo.size > 5 * 1024 * 1024:
+                raise ValidationError("Image must be smaller than 5MB")
+            # Check file type
+            if not photo.content_type.startswith('image/'):
+                raise ValidationError("File must be an image")
+        return photo
+
+
+class CarPhotoUploadForm(forms.ModelForm):
+    """Upload car photo"""
+    class Meta:
+        model = Profile
+        fields = ['car_photo']
+        widgets = {
+            'car_photo': forms.FileInput(attrs={
+                'accept': 'image/jpeg,image/png,image/gif',
+                'class': 'form-control'
+            })
+        }
+    
+    def clean_car_photo(self):
+        photo = self.cleaned_data.get('car_photo')
+        if photo:
+            # Check file size (max 5MB)
+            if photo.size > 5 * 1024 * 1024:
+                raise ValidationError("Image must be smaller than 5MB")
+            # Check file type
+            if not photo.content_type.startswith('image/'):
+                raise ValidationError("File must be an image")
+        return photo
+
+
+class IDVerificationForm(forms.ModelForm):
+    """Upload ID for verification"""
+    class Meta:
+        model = Profile
+        fields = ['id_type', 'id_number', 'id_photo']
+        widgets = {
+            'id_type': forms.Select(attrs={'class': 'form-control'}),
+            'id_number': forms.TextInput(attrs={
+                'placeholder': 'Your ID number',
+                'class': 'form-control'
+            }),
+            'id_photo': forms.FileInput(attrs={
+                'accept': 'image/jpeg,image/png,image/gif',
+                'class': 'form-control'
+            })
+        }
+    
+    def clean_id_number(self):
+        id_num = self.cleaned_data.get('id_number', '').strip()
+        if not id_num:
+            raise ValidationError("ID number is required")
+        return id_num
+    
+    def clean_id_photo(self):
+        photo = self.cleaned_data.get('id_photo')
+        if not photo:
+            raise ValidationError("ID photo is required")
+        if photo.size > 5 * 1024 * 1024:
+            raise ValidationError("Image must be smaller than 5MB")
+        if not photo.content_type.startswith('image/'):
+            raise ValidationError("File must be an image")
+        return photo
+
+
+class DriverLicenseVerificationForm(forms.ModelForm):
+    """Upload driver's license for verification"""
+    class Meta:
+        model = Profile
+        fields = ['driver_license_number', 'driver_license_expiry', 'driver_license_photo']
+        widgets = {
+            'driver_license_number': forms.TextInput(attrs={
+                'placeholder': 'Your license number',
+                'class': 'form-control'
+            }),
+            'driver_license_expiry': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }),
+            'driver_license_photo': forms.FileInput(attrs={
+                'accept': 'image/jpeg,image/png,image/gif',
+                'class': 'form-control'
+            })
+        }
+    
+    def clean_driver_license_number(self):
+        num = self.cleaned_data.get('driver_license_number', '').strip()
+        if not num:
+            raise ValidationError("License number is required")
+        return num
+    
+    def clean_driver_license_expiry(self):
+        expiry = self.cleaned_data.get('driver_license_expiry')
+        if expiry and expiry < timezone.now().date():
+            raise ValidationError("License has expired")
+        return expiry
+    
+    def clean_driver_license_photo(self):
+        photo = self.cleaned_data.get('driver_license_photo')
+        if not photo:
+            raise ValidationError("License photo is required")
+        if photo.size > 5 * 1024 * 1024:
+            raise ValidationError("Image must be smaller than 5MB")
+        return photo
+
+
+class ProfileForm(forms.ModelForm):
+    """Edit user profile"""
+    class Meta:
+        model = Profile
+        fields = ['bio', 'phone']
+        widgets = {
+            'bio': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Tell us about yourself',
+                'class': 'form-control'
+            }),
+            'phone': forms.TextInput(attrs={
+                'placeholder': 'Your phone number',
+                'type': 'tel',
+                'class': 'form-control',
+                'readonly': 'readonly'  # Phone cannot be changed once verified
+            })
+        }
 
     def clean_places(self):
         places = self.cleaned_data.get('places')
