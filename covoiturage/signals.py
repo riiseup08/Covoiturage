@@ -1,6 +1,24 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Voyage, Demande, Correspondance
+from django.contrib.auth.models import User
+from django.utils import timezone
+from .models import Profile, Voyage, Demande, Correspondance
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Ensure a Profile is created when a User is created."""
+    if created:
+        Profile.objects.get_or_create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    """Ensure Profile exists and has created_at set to avoid NOT NULL errors."""
+    profile, _ = Profile.objects.get_or_create(user=instance)
+    if profile.created_at is None:
+        profile.created_at = timezone.now()
+    profile.save()
 
 @receiver(post_save, sender=Voyage)
 def create_voyage_matches(sender, instance, created, **kwargs):

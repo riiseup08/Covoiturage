@@ -2,12 +2,43 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    bio = models.TextField(max_length=500, blank=True)
-    phone = models.CharField(max_length=20, blank=True)
+    """User profile with verification fields (aligned to existing DB schema)."""
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    bio = models.TextField(blank=True, default='')
+    phone = models.CharField(max_length=20, blank=True, null=True)
     is_driver = models.BooleanField(default=False)
+
+    # Photos
+    profile_photo = models.ImageField(upload_to='profile_photos/', blank=True, null=True)
+    car_photo = models.ImageField(upload_to='car_photos/', blank=True, null=True)
+
+    # ID verification
+    id_type = models.CharField(max_length=50, blank=True, default='')
+    id_number = models.CharField(max_length=50, blank=True, default='')
+    id_photo = models.ImageField(upload_to='id_photos/', blank=True, null=True)
+    id_verified = models.BooleanField(default=False)
+
+    # Driver license verification
+    driver_license_number = models.CharField(max_length=50, blank=True, null=True)
+    driver_license_photo = models.ImageField(upload_to='driver_license_photos/', blank=True, null=True)
+    driver_license_verified = models.BooleanField(default=False)
+    driver_license_expiry = models.DateField(blank=True, null=True)
+
+    # Phone verification
+    phone_verified = models.BooleanField(default=False)
+
+    # Status & scoring
+    verification_status = models.CharField(max_length=20, default='not_started')
+    verification_notes = models.TextField(blank=True, default='')
+    trust_score = models.IntegerField(default=50)
+
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Profil de {self.user.username}"
@@ -19,7 +50,11 @@ def create_user_profile(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
-    instance.profile.save()
+    try:
+        instance.profile.save()
+    except (Profile.DoesNotExist, AttributeError):
+        # Si le profil n'existe pas encore (ex: mise à jour last_login), le créer pour éviter une erreur 500.
+        Profile.objects.get_or_create(user=instance)
 
 class Voyage(models.Model):
     conducteur = models.ForeignKey(User, on_delete=models.CASCADE)
