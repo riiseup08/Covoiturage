@@ -142,6 +142,12 @@ SHORT_DATE_FORMAT = 'd/m/Y'
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Fichiers média uploadés par les utilisateurs (photos de profil, voitures)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 # Rediriger vers le dashboard après la connexion
 LOGIN_REDIRECT_URL = 'covoiturage:dashboard'
 

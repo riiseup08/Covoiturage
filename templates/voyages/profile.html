@@ -22,6 +22,9 @@
         textarea { min-height: 100px; resize: vertical; }
         .checkbox-group { display: flex; align-items: center; gap: 10px; }
         .checkbox-group input { width: auto; }
+        .photo-preview { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid var(--color-earth); display: block; margin-bottom: 12px; }
+        .photo-placeholder { width: 120px; height: 120px; border-radius: 50%; background: #F1EFE9; border: 3px dashed #EBE5D9; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 12px; }
+        input[type="file"] { font-size: 14px; color: #555; }
         .btn-group { display: flex; gap: 15px; margin-top: 25px; }
         .btn { padding: 14px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.3s; font-family: 'Outfit'; }
         .btn-cancel { background: #F1EFE9; color: var(--color-night); }
@@ -49,8 +52,18 @@
         </div>
         {% endif %}
         <div class="form-container">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
+                <div class="form-group" style="text-align: center;">
+                    {% if form.instance.photo_profil %}
+                        <img src="{{ form.instance.photo_profil.url }}" alt="Photo de profil" class="photo-preview">
+                    {% else %}
+                        <div class="photo-placeholder">👤</div>
+                    {% endif %}
+                    <label for="id_photo_profil">Photo de profil</label>
+                    {{ form.photo_profil }}
+                    {{ form.photo_profil.errors }}
+                </div>
                 <div class="form-group">
                     <label for="id_bio">Bio</label>
                     {{ form.bio }}

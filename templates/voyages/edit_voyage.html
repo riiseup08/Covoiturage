@@ -36,7 +36,7 @@
             <a href="{% url 'covoiturage:dashboard' %}" style="color: var(--color-earth); font-weight: 600;">← Retour au tableau de bord</a>
         </div>
         <div class="form-container">
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="id_ville_depart">Ville de départ</label>
@@ -93,6 +93,14 @@
                     <label for="id_type_bagage_accepte">Type de bagage accepté</label>
                     {{ form.type_bagage_accepte }}
                     {{ form.type_bagage_accepte.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_photo_voiture">📷 Photo du véhicule (optionnelle)</label>
+                    {% if form.instance.photo_voiture %}
+                        <img src="{{ form.instance.photo_voiture.url }}" alt="Photo du véhicule" style="max-width: 200px; border-radius: 8px; margin-bottom: 10px; display: block;">
+                    {% endif %}
+                    {{ form.photo_voiture }}
+                    {{ form.photo_voiture.errors }}
                 </div>
                 <div class="btn-group">
                     <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
