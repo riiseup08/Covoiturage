@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import Voyage, Demande, Profile, Avis
+from .models import Voyage, Demande, Profile, Avis, Message
 from django.utils import timezone
 
 
@@ -107,4 +107,20 @@ class DemandeForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'phone', 'is_driver']
+        fields = ['bio', 'phone', 'is_driver', 'profile_photo']
+        widgets = {
+            'profile_photo': forms.FileInput(attrs={'accept': 'image/*'}),
+        }
+
+
+class MessageForm(forms.ModelForm):
+    class Meta:
+        model = Message
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={
+                'rows': 2,
+                'placeholder': 'Écrivez votre message...',
+                'maxlength': 1000,
+            }),
+        }

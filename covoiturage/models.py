@@ -65,6 +65,20 @@ class Voyage(models.Model):
     date_arrivee = models.DateTimeField()
     places_disponibles = models.PositiveIntegerField(default=1)
     prix_par_place = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Validation et statut du trajet
+    is_validated = models.BooleanField(default=False, help_text="Trajet validé par l'équipe")
+    status = models.CharField(max_length=20, default='pending', help_text="Statut global du trajet")
+    driver_confirmed_pickup = models.BooleanField(default=False, help_text="Le conducteur confirme la prise en charge")
+    driver_confirmed_dropoff = models.BooleanField(default=False, help_text="Le conducteur confirme la dépose")
+
+    # Localisation (optionnelle)
+    start_latitude = models.FloatField(blank=True, null=True)
+    start_longitude = models.FloatField(blank=True, null=True)
+    end_latitude = models.FloatField(blank=True, null=True)
+    end_longitude = models.FloatField(blank=True, null=True)
 
     # Véhicule et bagages
     plaque_immatriculation = models.CharField(
@@ -130,3 +144,68 @@ class Avis(models.Model):
 
     def __str__(self):
         return f"{self.auteur.username} → {self.utilisateur_note.username} ({self.note}/5)"
+
+
+class Notification(models.Model):
+    """In-app notifications for users."""
+    TYPE_CHOICES = [
+        ('match', 'Nouveau match trouvé'),
+        ('match_validated', 'Match validé'),
+        ('match_refused', 'Match refusé'),
+        ('review', 'Nouvel avis reçu'),
+        ('trip_reminder', 'Rappel de trajet'),
+        ('trip_completed', 'Trajet terminé'),
+        ('message', 'Nouveau message'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    related_voyage = models.ForeignKey(Voyage, on_delete=models.CASCADE, null=True, blank=True)
+    related_correspondance = models.ForeignKey(Correspondance, on_delete=models.CASCADE, null=True, blank=True)
+    related_avis = models.ForeignKey(Avis, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read']),
+            models.Index(fields=['user', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.notification_type}: {self.title}"
+    
+    @property
+    def icon(self):
+        """Return emoji icon based on notification type."""
+        icons = {
+            'match': '🤝',
+            'match_validated': '✅',
+            'match_refused': '❌',
+            'review': '⭐',
+            'trip_reminder': '📅',
+            'trip_completed': '🚗',
+            'message': '💬',
+        }
+        return icons.get(self.notification_type, '📌')
+
+
+class Message(models.Model):
+    """Direct message between matched users on a specific correspondance."""
+    correspondance = models.ForeignKey(Correspondance, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    content = models.TextField(max_length=1000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['correspondance', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.content[:50]}"

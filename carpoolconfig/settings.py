@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'false').lower() in ('1', 'true', 'yes')
+DEBUG = True
 
 # En prod, ajouter votre domaine (ex. covoiturage-xxx.onrender.com). Séparer par des virgules si plusieurs.
 _ALLOWED = os.environ.get('ALLOWED_HOSTS', '')
@@ -142,6 +142,10 @@ SHORT_DATE_FORMAT = 'd/m/Y'
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+# Media files (uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 # Rediriger vers le dashboard après la connexion
 LOGIN_REDIRECT_URL = 'covoiturage:dashboard'
 
@@ -189,3 +193,9 @@ else:
     )
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@covoit.africa')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+# Géocodage (OpenStreetMap / Nominatim)
+NOMINATIM_USER_AGENT = os.environ.get('NOMINATIM_USER_AGENT', 'covoiturage-geocoder')
+NOMINATIM_TIMEOUT = _env_int('NOMINATIM_TIMEOUT', 5)
+NOMINATIM_LANGUAGE = os.environ.get('NOMINATIM_LANGUAGE', 'fr')
+NOMINATIM_MIN_DELAY = _env_int('NOMINATIM_MIN_DELAY', 1)

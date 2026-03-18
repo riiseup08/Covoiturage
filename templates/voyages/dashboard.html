@@ -90,11 +90,18 @@
         <div class="header">
             <h1>👋 Salut, {{ request.user.username }}</h1>
             <div class="nav-links">
+                <a href="{% url 'covoiturage:notifications_list' %}" class="notification-bell" style="position: relative; background-color: #F1EFE9; color: var(--color-night);">
+                    🔔
+                    {% if unread_count > 0 %}
+                    <span style="position: absolute; top: -5px; right: -5px; background: #D32F2F; color: white; font-size: 11px; font-weight: bold; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ unread_count }}</span>
+                    {% endif %}
+                </a>
                 <a href="{% url 'covoiturage:add_voyage' %}" class="btn-primary">🚗 Publier un trajet</a>
                 <a href="{% url 'covoiturage:search_trajets' %}">🔍 Voir les trajets disponibles</a>
                 <a href="{% url 'covoiturage:add_demande' %}">🙋‍♂️ Publier une demande de trajet</a>
                 <a href="{% url 'covoiturage:profile' %}">👤 Mon Profil</a>
                 <a href="{% url 'covoiturage:avis_list' %}">⭐ Laisser un avis</a>
+                <a href="/analytics/dashboard/">📊 Analytics</a>
                 
                 <!-- Déconnexion -->
                 <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0; padding:0;">
@@ -259,6 +266,10 @@
                                 <button type="submit" class="btn-refuse">Annuler mon intérêt</button>
                             </form>
                         {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="card-actions" style="margin-top: 15px;">
+                        <a href="{% url 'covoiturage:conversation' correspondance.id %}" class="btn-edit" style="background-color: var(--color-earth); color: white; text-align: center;">💬 Envoyer un message</a>
                     </div>
                     {% endif %}
                 </div>

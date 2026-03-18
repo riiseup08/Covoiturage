@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -17,7 +18,7 @@
         .form-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; }
         .form-container h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--color-night); }
         .subtitle { color: #666; margin-bottom: 28px; font-size: 15px; }
-        .form-group { margin-bottom: 22px; }
+        .form-group { margin-bottom: 22px; position: relative; }
         label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--color-night); }
         input[type="text"], input[type="number"], input[type="date"] {
             width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px;
@@ -90,5 +91,6 @@
             </form>
         </div>
     </div>
+    <script src="{% static 'js/geocomplete.js' %}"></script>
 </body>
 </html>

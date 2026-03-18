@@ -6,11 +6,24 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
-from .models import Voyage, Demande, Correspondance, Profile, Avis
-from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm
+from django.http import JsonResponse
+from django.conf import settings
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
+from geopy.exc import GeocoderServiceError
+from .models import Voyage, Demande, Correspondance, Profile, Avis, Notification, Message
+from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm, MessageForm
+from .notifications import get_unread_count, mark_all_read
 
 PAGE_SIZE = 10
 SEARCH_PAGE_SIZE = 12
+
+_geocoder = Nominatim(
+    user_agent=settings.NOMINATIM_USER_AGENT,
+    timeout=settings.NOMINATIM_TIMEOUT,
+)
+_geocode = RateLimiter(_geocoder.geocode, min_delay_seconds=settings.NOMINATIM_MIN_DELAY)
+_reverse = RateLimiter(_geocoder.reverse, min_delay_seconds=settings.NOMINATIM_MIN_DELAY)
 
 def landing_view(request):
     return render(request, 'voyages/landing.html')
@@ -79,6 +92,7 @@ def home_view(request):
             'total_demandes': demandes.count(),
             'total_correspondances': correspondances.count(),
         },
+        'unread_count': get_unread_count(request.user),
     }
     return render(request, 'voyages/dashboard.html', context)
 
@@ -90,11 +104,11 @@ def profile_view(request):
         profile = Profile.objects.create(user=request.user)
 
     if request.method == 'POST':
-        form = ProfileForm(request.POST, instance=profile)
+        form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
             messages.success(request, 'Votre profil a été mis à jour avec succès.')
-            return redirect('covoiturage:dashboard')
+            return redirect('covoiturage:profile')
     else:
         form = ProfileForm(instance=profile)
 
@@ -230,6 +244,60 @@ def mark_voyage_termine(request, voyage_id):
         messages.success(request, "Trajet marqué comme terminé.")
         return redirect('covoiturage:dashboard')
     return redirect('covoiturage:dashboard')
+
+
+def geocode_forward(request):
+    """Recherche d'adresse via Nominatim (OpenStreetMap)."""
+    query = (request.GET.get('q') or '').strip()
+    if not query:
+        return JsonResponse({'results': []})
+    try:
+        locations = _geocode(
+            query,
+            exactly_one=False,
+            addressdetails=True,
+            language=settings.NOMINATIM_LANGUAGE,
+            limit=5,
+        )
+    except GeocoderServiceError:
+        return JsonResponse({'error': 'geocoding_failed'}, status=503)
+    if not locations:
+        return JsonResponse({'results': []})
+    results = [
+        {
+            'display_name': loc.address,
+            'lat': float(loc.latitude),
+            'lon': float(loc.longitude),
+        }
+        for loc in locations
+    ]
+    return JsonResponse({'results': results})
+
+
+def geocode_reverse(request):
+    """Inverse: coord -> adresse via Nominatim."""
+    try:
+        lat = float(request.GET.get('lat', ''))
+        lon = float(request.GET.get('lon', ''))
+    except ValueError:
+        return JsonResponse({'error': 'invalid_coordinates'}, status=400)
+    try:
+        location = _reverse(
+            (lat, lon),
+            exactly_one=True,
+            addressdetails=True,
+            language=settings.NOMINATIM_LANGUAGE,
+        )
+    except GeocoderServiceError:
+        return JsonResponse({'error': 'geocoding_failed'}, status=503)
+    if not location:
+        return JsonResponse({'results': []})
+    result = {
+        'display_name': location.address,
+        'lat': float(location.latitude),
+        'lon': float(location.longitude),
+    }
+    return JsonResponse({'results': [result]})
 
 
 @login_required
@@ -370,3 +438,94 @@ def add_avis_view(request, voyage_id, user_id):
         form = AvisForm()
     context = {'form': form, 'voyage': voyage, 'utilisateur_note': utilisateur_note}
     return render(request, 'voyages/add_avis.html', context)
+
+
+# ================== NOTIFICATIONS VIEWS ==================
+
+@login_required
+def notifications_list(request):
+    """Affiche la liste des notifications de l'utilisateur."""
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Pagination
+    paginator = Paginator(notifications, 20)
+    page = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page)
+    
+    context = {
+        'notifications': page_obj,
+        'unread_count': get_unread_count(request.user),
+    }
+    return render(request, 'voyages/notifications_list.html', context)
+
+
+@login_required
+def notifications_mark_read(request, notification_id):
+    """Marquer une notification comme lue."""
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    
+    # Redirect to the related object if available
+    if notification.related_voyage:
+        return redirect('covoiturage:dashboard')
+    elif notification.related_avis:
+        return redirect('covoiturage:avis_list')
+    
+    return redirect('covoiturage:notifications_list')
+
+
+@login_required
+def notifications_mark_all_read(request):
+    """Marquer toutes les notifications comme lues."""
+    if request.method == 'POST':
+        mark_all_read(request.user)
+        messages.success(request, "Toutes les notifications ont été marquées comme lues.")
+    return redirect('covoiturage:notifications_list')
+
+
+# ================== MESSAGING VIEWS ==================
+
+@login_required
+def conversation_view(request, correspondance_id):
+    """Chat thread for a validated match."""
+    correspondance = get_object_or_404(Correspondance, id=correspondance_id)
+
+    # Only the driver or passenger involved may access
+    is_driver = correspondance.voyage.conducteur == request.user
+    is_passenger = correspondance.demande.passager == request.user
+    if not (is_driver or is_passenger):
+        messages.error(request, "Vous n'avez pas accès à cette conversation.")
+        return redirect('covoiturage:dashboard')
+
+    if not correspondance.is_validated:
+        messages.info(request, "La conversation sera disponible une fois le match validé.")
+        return redirect('covoiturage:dashboard')
+
+    other_user = correspondance.demande.passager if is_driver else correspondance.voyage.conducteur
+
+    # Mark incoming messages as read
+    Message.objects.filter(
+        correspondance=correspondance, is_read=False
+    ).exclude(sender=request.user).update(is_read=True)
+
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            msg = form.save(commit=False)
+            msg.correspondance = correspondance
+            msg.sender = request.user
+            msg.save()
+            return redirect('covoiturage:conversation', correspondance_id=correspondance.id)
+    else:
+        form = MessageForm()
+
+    msgs = correspondance.messages.select_related('sender').order_by('created_at')
+
+    context = {
+        'correspondance': correspondance,
+        'other_user': other_user,
+        'chat_messages': msgs,
+        'form': form,
+    }
+    return render(request, 'voyages/conversation.html', context)

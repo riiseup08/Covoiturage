@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Profile, Voyage, Demande, Correspondance, Avis
+from .models import Profile, Voyage, Demande, Correspondance, Avis, Message
 
 @admin.register(Avis)
 class AvisAdmin(admin.ModelAdmin):
@@ -31,3 +31,9 @@ class CorrespondanceAdmin(admin.ModelAdmin):
     # 'passager_embarque' et 'paiement_effectue' ont été enlevés
     list_display = ('voyage', 'demande', 'score_match', 'is_validated')
     list_filter = ('is_validated',)
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('sender', 'correspondance', 'created_at', 'is_read')
+    list_filter = ('is_read', 'created_at')
+    search_fields = ('sender__username', 'content')

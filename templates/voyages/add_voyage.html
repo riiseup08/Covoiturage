@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -15,7 +16,7 @@
         p.subtitle { color: #666; margin-bottom: 30px; font-size: 16px; }
 
         .form-row { display: flex; gap: 20px; margin-bottom: 20px; }
-        .form-group { flex: 1; }
+        .form-group { flex: 1; position: relative; }
         label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: var(--color-night); }
 
         input[type="text"], input[type="number"], input[type="date"], input[type="datetime-local"], select {
@@ -223,5 +224,6 @@
             if(selectPaysArrivee) selectPaysArrivee.addEventListener('change', () => updateVilles(selectPaysArrivee, listArrivee, inputVilleArrivee));
         });
     </script>
+    <script src="{% static 'js/geocomplete.js' %}"></script>
 </body>
 </html>
