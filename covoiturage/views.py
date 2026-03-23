@@ -30,6 +30,29 @@ _geocoder = Nominatim(
 _geocode = RateLimiter(_geocoder.geocode, min_delay_seconds=settings.NOMINATIM_MIN_DELAY)
 _reverse = RateLimiter(_geocoder.reverse, min_delay_seconds=settings.NOMINATIM_MIN_DELAY)
 
+import json as _json
+import logging
+_logger = logging.getLogger(__name__)
+
+
+def _geocode_voyage(voyage):
+    """Auto-geocode departure and arrival cities into lat/lon fields."""
+    for prefix, city_field in [('start', 'ville_depart'), ('end', 'ville_arrivee')]:
+        city = getattr(voyage, city_field, '')
+        if not city:
+            continue
+        # Skip if already has coordinates and city hasn't changed
+        lat_field = f'{prefix}_latitude'
+        lon_field = f'{prefix}_longitude'
+        try:
+            loc = _geocode(city + ', Africa', exactly_one=True, language='fr')
+            if loc:
+                setattr(voyage, lat_field, loc.latitude)
+                setattr(voyage, lon_field, loc.longitude)
+        except GeocoderServiceError:
+            _logger.warning("Geocoding failed for %s", city)
+
+
 def landing_view(request):
     return render(request, 'voyages/landing.html')
 
@@ -287,6 +310,7 @@ def add_voyage(request):
         if form.is_valid():
             voyage = form.save(commit=False)
             voyage.conducteur = request.user
+            _geocode_voyage(voyage)
             voyage.save()
             messages.success(request, 'Votre trajet a été publié avec succès.')
             return redirect('covoiturage:dashboard')
@@ -317,9 +341,14 @@ def add_demande(request):
 def edit_voyage(request, voyage_id):
     voyage = get_object_or_404(Voyage, id=voyage_id, conducteur=request.user)
     if request.method == 'POST':
+        old_depart = voyage.ville_depart
+        old_arrivee = voyage.ville_arrivee
         form = VoyageForm(request.POST, instance=voyage)
         if form.is_valid():
-            form.save()
+            voyage = form.save(commit=False)
+            if voyage.ville_depart != old_depart or voyage.ville_arrivee != old_arrivee:
+                _geocode_voyage(voyage)
+            voyage.save()
             messages.success(request, 'Trajet modifié avec succès.')
             return redirect('covoiturage:dashboard')
     else:
@@ -518,6 +547,25 @@ def search_trajets(request):
     page = request.GET.get('page', 1)
     page_obj = paginator.get_page(page)
 
+    # Build geo data for map
+    map_markers = []
+    for v in page_obj:
+        if v.start_latitude and v.start_longitude:
+            map_markers.append({
+                'id': v.id,
+                'depart': v.ville_depart,
+                'arrivee': v.ville_arrivee,
+                'start_lat': v.start_latitude,
+                'start_lon': v.start_longitude,
+                'end_lat': v.end_latitude,
+                'end_lon': v.end_longitude,
+                'conducteur': v.conducteur.username,
+                'prix': str(v.prix_par_place),
+                'places': v.places_disponibles,
+                'date': v.date_depart.strftime('%d %b %Y %H:%M'),
+                'women_only': v.women_only,
+            })
+
     context = {
         'voyages': page_obj,
         'ville_depart': ville_depart,
@@ -528,6 +576,7 @@ def search_trajets(request):
         'places_min': places_min,
         'women_only': women_only,
         'Voyage': Voyage,
+        'map_markers_json': _json.dumps(map_markers),
     }
     return render(request, 'voyages/search_trajets.html', context)
 

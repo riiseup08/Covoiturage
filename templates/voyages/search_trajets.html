@@ -3,6 +3,7 @@
 {% block title %}Voir les trajets disponibles - Covoit.Africa{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
     :root { --container-width: 900px; }
     .search-box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 30px; }
@@ -20,6 +21,10 @@
     .btn-trip:hover { background: var(--color-earth-dark); }
     .btn-profile { display: inline-block; padding: 10px 18px; background: #F1EFE9; color: var(--color-night); border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
     .btn-profile:hover { background: #E2DFD6; }
+    #map-container { background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; }
+    #map { height: 400px; width: 100%; }
+    .map-toggle { text-align: center; padding: 10px; cursor: pointer; font-weight: 600; color: var(--color-earth); user-select: none; }
+    .map-toggle:hover { background: #FFF2ED; }
 </style>
 {% endblock %}
 
@@ -74,6 +79,11 @@
             </form>
         </div>
 
+        <div id="map-container">
+            <div class="map-toggle" id="map-toggle" onclick="toggleMap()">🗺️ Afficher la carte</div>
+            <div id="map" style="display:none;"></div>
+        </div>
+
         <p class="results-count">{{ voyages.paginator.count }} trajet(s) trouvé(s)</p>
         <div class="grid">
             {% for voyage in voyages %}
@@ -119,4 +129,63 @@
             {% endif %}
         </div>
         {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function() {
+    var markers = {{ map_markers_json|safe }};
+    var map, mapInitialized = false;
+
+    window.toggleMap = function() {
+        var mapDiv = document.getElementById('map');
+        var toggle = document.getElementById('map-toggle');
+        if (mapDiv.style.display === 'none') {
+            mapDiv.style.display = 'block';
+            toggle.textContent = '🗺️ Masquer la carte';
+            if (!mapInitialized) { initMap(); mapInitialized = true; }
+            else { map.invalidateSize(); }
+        } else {
+            mapDiv.style.display = 'none';
+            toggle.textContent = '🗺️ Afficher la carte';
+        }
+    };
+
+    function initMap() {
+        map = L.map('map').setView([5.95, 10.15], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 18
+        }).addTo(map);
+
+        if (markers.length === 0) return;
+
+        var bounds = L.latLngBounds();
+        var startIcon = L.divIcon({className:'', html:'<div style="background:#D95D39;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.3);">D</div>', iconSize:[28,28], iconAnchor:[14,14]});
+        var endIcon = L.divIcon({className:'', html:'<div style="background:#1A1A1A;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.3);">A</div>', iconSize:[28,28], iconAnchor:[14,14]});
+
+        markers.forEach(function(m) {
+            var popup = '<strong>' + m.depart + ' → ' + m.arrivee + '</strong><br>' +
+                '📅 ' + m.date + '<br>' +
+                '💰 ' + m.prix + ' FCFA · 🎟️ ' + m.places + ' place(s)<br>' +
+                '👤 ' + m.conducteur +
+                (m.women_only ? '<br><span style="color:#7B1FA2;font-weight:600;">👩 Femmes uniquement</span>' : '');
+
+            var startMarker = L.marker([m.start_lat, m.start_lon], {icon: startIcon}).addTo(map).bindPopup(popup);
+            bounds.extend([m.start_lat, m.start_lon]);
+
+            if (m.end_lat && m.end_lon) {
+                L.marker([m.end_lat, m.end_lon], {icon: endIcon}).addTo(map).bindPopup(popup);
+                bounds.extend([m.end_lat, m.end_lon]);
+                L.polyline([[m.start_lat, m.start_lon], [m.end_lat, m.end_lon]], {
+                    color: '#D95D39', weight: 2, opacity: 0.6, dashArray: '8 6'
+                }).addTo(map);
+            }
+        });
+
+        map.fitBounds(bounds, {padding: [40, 40]});
+    }
+})();
+</script>
 {% endblock %}
