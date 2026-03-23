@@ -50,8 +50,6 @@ class Profile(models.Model):
     GENDER_CHOICES = [
         ('male', 'Homme'),
         ('female', 'Femme'),
-        ('other', 'Autre'),
-        ('prefer_not', 'Préfère ne pas dire'),
     ]
     gender = models.CharField(max_length=12, choices=GENDER_CHOICES, blank=True, default='')
     emergency_contact_name = models.CharField(max_length=100, blank=True, default='', help_text="Nom du contact d'urgence")

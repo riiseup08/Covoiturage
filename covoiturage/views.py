@@ -305,18 +305,21 @@ def public_profile_view(request, username):
 
 @login_required
 def add_voyage(request):
+    is_female = getattr(request.user, 'profile', None) and request.user.profile.gender == 'female'
     if request.method == 'POST':
         form = VoyageForm(request.POST)
         if form.is_valid():
             voyage = form.save(commit=False)
             voyage.conducteur = request.user
+            if not is_female:
+                voyage.women_only = False
             _geocode_voyage(voyage)
             voyage.save()
             messages.success(request, 'Votre trajet a été publié avec succès.')
             return redirect('covoiturage:dashboard')
     else:
         form = VoyageForm()
-    return render(request, 'voyages/add_voyage.html', {'form': form})
+    return render(request, 'voyages/add_voyage.html', {'form': form, 'is_female': is_female})
 
 @login_required
 def add_demande(request):
@@ -340,12 +343,15 @@ def add_demande(request):
 @login_required
 def edit_voyage(request, voyage_id):
     voyage = get_object_or_404(Voyage, id=voyage_id, conducteur=request.user)
+    is_female = getattr(request.user, 'profile', None) and request.user.profile.gender == 'female'
     if request.method == 'POST':
         old_depart = voyage.ville_depart
         old_arrivee = voyage.ville_arrivee
         form = VoyageForm(request.POST, instance=voyage)
         if form.is_valid():
             voyage = form.save(commit=False)
+            if not is_female:
+                voyage.women_only = False
             if voyage.ville_depart != old_depart or voyage.ville_arrivee != old_arrivee:
                 _geocode_voyage(voyage)
             voyage.save()
@@ -353,7 +359,7 @@ def edit_voyage(request, voyage_id):
             return redirect('covoiturage:dashboard')
     else:
         form = VoyageForm(instance=voyage)
-    return render(request, 'voyages/edit_voyage.html', {'form': form})
+    return render(request, 'voyages/edit_voyage.html', {'form': form, 'is_female': is_female})
 
 @login_required
 def delete_voyage(request, voyage_id):

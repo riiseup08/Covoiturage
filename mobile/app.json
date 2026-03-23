@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Covoiturage",
+    "slug": "covoiturage",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#5C4033"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.covoiturage.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#5C4033"
+      },
+      "package": "com.covoiturage.app",
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-location"
+    ]
+  }
+}

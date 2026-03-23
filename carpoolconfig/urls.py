@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('analytics/', include('covoiturage.analytics_urls')),
+    path('api/', include('covoiturage.api_urls')),
     path('', include('covoiturage.urls')), # On délègue TOUT à l'application
 ]
 

@@ -92,9 +92,11 @@
                 <div class="checkbox-group" style="margin-bottom: 10px;">
                     {{ form.accept_cash }} <label for="id_accept_cash" style="margin-bottom:0;">Accepter les espèces</label>
                 </div>
+                {% if is_female %}
                 <div class="checkbox-group" style="margin-bottom: 20px;">
                     {{ form.women_only }} <label for="id_women_only" style="margin-bottom:0;">👩 Trajet réservé aux femmes</label>
                 </div>
+                {% endif %}
 
                 <hr class="separator">
                 <p class="section-label">🚗 Véhicule & Bagages</p>

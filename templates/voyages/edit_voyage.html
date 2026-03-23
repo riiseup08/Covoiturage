@@ -33,7 +33,7 @@
                 </div>
                 <div class="checkbox-group" style="margin-bottom:10px;">{{ form.accept_mobile_money }} <label for="id_accept_mobile_money" style="margin-bottom:0;">Mobile Money</label></div>
                 <div class="checkbox-group" style="margin-bottom:10px;">{{ form.accept_cash }} <label for="id_accept_cash" style="margin-bottom:0;">Espèces</label></div>
-                <div class="checkbox-group" style="margin-bottom:20px;">{{ form.women_only }} <label for="id_women_only" style="margin-bottom:0;">👩 Femmes uniquement</label></div>
+                {% if is_female %}<div class="checkbox-group" style="margin-bottom:20px;">{{ form.women_only }} <label for="id_women_only" style="margin-bottom:0;">👩 Femmes uniquement</label></div>{% endif %}
                 <div class="form-row">
                     <div class="form-group"><label>Plaque</label>{{ form.plaque_immatriculation }}</div>
                     <div class="form-group"><label>Véhicule</label>{{ form.modele_voiture }}</div>

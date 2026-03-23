@@ -31,7 +31,7 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').strip().lower() in ('1', 'true', 
 # En prod, ajouter votre domaine (ex. covoiturage-xxx.onrender.com). Séparer par des virgules si plusieurs.
 _ALLOWED = os.environ.get('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = [h.strip() for h in _ALLOWED.split(',') if h.strip()] or [
-    'localhost', '127.0.0.1', 'covoiturage-0m0x.onrender.com'
+    'localhost', '127.0.0.1', '172.26.144.1', 'covoiturage-0m0x.onrender.com'
 ]
 
 # Requis en HTTPS (ex. Render) pour que les formulaires (inscription, connexion) passent.
@@ -56,11 +56,37 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'rest_framework',
+    'rest_framework.authtoken',
     'covoiturage',
+]
+
+# Django REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+
+# CORS – allow the Expo web dev server
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8081',
+    'http://localhost:8082',
+    'http://localhost:8083',
+    'http://localhost:8084',
+    'http://localhost:19006',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

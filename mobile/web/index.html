@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Covoiturage</title>
+    <style id="expo-reset">
+      html, body { height: 100%; margin: 0; }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+      #error-overlay {
+        display: none;
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: #faf6f1; z-index: 99999;
+        padding: 40px; font-family: monospace; overflow: auto;
+      }
+      #error-overlay h1 { color: #c00; font-size: 24px; }
+      #error-overlay pre { 
+        background: #1a1a2e; color: #ff6b6b; padding: 16px; 
+        border-radius: 8px; white-space: pre-wrap; word-break: break-all;
+        font-size: 13px; line-height: 1.5;
+      }
+    </style>
+    <script>
+      // Catch ALL errors and display them visibly
+      window.__errors = [];
+      function showError(msg) {
+        window.__errors.push(msg);
+        var el = document.getElementById('error-overlay');
+        if (el) {
+          el.style.display = 'block';
+          el.innerHTML = '<h1>App Error (' + window.__errors.length + ')</h1>' +
+            window.__errors.map(function(e) { return '<pre>' + e + '</pre>'; }).join('');
+        }
+      }
+      window.onerror = function(msg, src, line, col, err) {
+        showError(msg + '\n\nSource: ' + src + ':' + line + ':' + col + '\n\n' + (err && err.stack ? err.stack : ''));
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        showError('Unhandled Promise: ' + (e.reason && e.reason.stack ? e.reason.stack : String(e.reason)));
+      });
+      // Log when script loads
+      console.log('[DEBUG] index.html loaded, waiting for bundle...');
+    </script>
+  </head>
+  <body>
+    <div id="error-overlay"></div>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
