@@ -7,7 +7,11 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "optimize:images": "node scripts/optimize-images.js",
+    "optimize:images:check": "node scripts/optimize-images.js --check",
+    "optimize:images:resize": "node scripts/optimize-images.js --resize",
+    "optimize:images:webp": "node scripts/optimize-images.js --webp --resize"
   },
   "keywords": [],
   "author": "",
