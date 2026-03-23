@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import (
     Profile, Voyage, Demande, Correspondance,
-    Avis, Notification, Message,
+    Avis, Notification, Message, Payment,
 )
 
 
@@ -143,3 +143,26 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = ['id', 'correspondance', 'sender', 'sender_username', 'content', 'created_at']
         read_only_fields = ['sender']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    payer_username = serializers.CharField(source='payer.username', read_only=True)
+    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
+
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'correspondance', 'payer', 'payer_username',
+            'receiver', 'receiver_username',
+            'amount', 'currency', 'method', 'provider',
+            'phone_number', 'status', 'transaction_ref',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['payer', 'receiver', 'status', 'transaction_ref']
+
+
+class PaymentCreateSerializer(serializers.Serializer):
+    correspondance_id = serializers.IntegerField()
+    method = serializers.ChoiceField(choices=['mobile_money', 'cash'])
+    provider = serializers.ChoiceField(choices=['mtn', 'orange', 'moov', 'airtel', 'wave', 'cash'], required=False, default='')
+    phone_number = serializers.CharField(max_length=20, required=False, default='')

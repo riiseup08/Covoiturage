@@ -6,11 +6,15 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { I18nProvider, useI18n } from './src/i18n';
 import { Colors } from './src/theme';
+import OfflineBanner from './src/components/OfflineBanner';
 
 // Auth screens
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import PhoneLoginScreen from './src/screens/PhoneLoginScreen';
+import PhoneVerifyScreen from './src/screens/PhoneVerifyScreen';
 
 // Main screens
 import DashboardScreen from './src/screens/DashboardScreen';
@@ -23,6 +27,7 @@ import PublicProfileScreen from './src/screens/PublicProfileScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import MatchesScreen from './src/screens/MatchesScreen';
 import ConversationScreen from './src/screens/ConversationScreen';
+import PaymentScreen from './src/screens/PaymentScreen';
 
 // Error boundary to catch and display runtime errors on web
 class ErrorBoundary extends React.Component {
@@ -58,6 +63,8 @@ const screenOptions = {
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="PhoneLogin" component={PhoneLoginScreen} />
+      <Stack.Screen name="PhoneVerify" component={PhoneVerifyScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
     </Stack.Navigator>
@@ -65,6 +72,7 @@ function AuthStack() {
 }
 
 function HomeTabs() {
+  const { t } = useI18n();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -84,24 +92,26 @@ function HomeTabs() {
         },
       })}
     >
-      <Tab.Screen name="DashboardTab" component={DashboardScreen} options={{ title: 'Accueil', headerTitle: 'Covoiturage' }} />
-      <Tab.Screen name="SearchTab" component={SearchScreen} options={{ title: 'Rechercher', headerTitle: 'Rechercher un trajet' }} />
-      <Tab.Screen name="MatchesTab" component={MatchesScreen} options={{ title: 'Matchs', headerTitle: 'Mes matchs' }} />
-      <Tab.Screen name="NotificationsTab" component={NotificationsScreen} options={{ title: 'Notifs', headerTitle: 'Notifications' }} />
-      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Profil', headerTitle: 'Mon profil' }} />
+      <Tab.Screen name="DashboardTab" component={DashboardScreen} options={{ title: t('tabHome'), headerTitle: 'Covoiturage' }} />
+      <Tab.Screen name="SearchTab" component={SearchScreen} options={{ title: t('tabSearch'), headerTitle: t('searchTitle') }} />
+      <Tab.Screen name="MatchesTab" component={MatchesScreen} options={{ title: t('tabMatches'), headerTitle: t('myMatches') }} />
+      <Tab.Screen name="NotificationsTab" component={NotificationsScreen} options={{ title: t('tabNotifs'), headerTitle: t('notifications') }} />
+      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: t('tabProfile'), headerTitle: t('myProfile') }} />
     </Tab.Navigator>
   );
 }
 
 function MainStack() {
+  const { t } = useI18n();
   return (
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="HomeTabs" component={HomeTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="AddTrip" component={AddTripScreen} options={{ title: 'Publier un trajet' }} />
-      <Stack.Screen name="AddDemande" component={AddDemandeScreen} options={{ title: 'Poster une demande' }} />
-      <Stack.Screen name="TripDetail" component={TripDetailScreen} options={{ title: 'Détails du trajet' }} />
-      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: 'Profil' }} />
+      <Stack.Screen name="AddTrip" component={AddTripScreen} options={{ title: t('publishTrip') }} />
+      <Stack.Screen name="AddDemande" component={AddDemandeScreen} options={{ title: t('postRequest') }} />
+      <Stack.Screen name="TripDetail" component={TripDetailScreen} options={{ title: t('tripDetails') }} />
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: t('tabProfile') }} />
       <Stack.Screen name="Conversation" component={ConversationScreen} options={{ title: 'Conversation' }} />
+      <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: t('paymentTitle') }} />
     </Stack.Navigator>
   );
 }
@@ -123,12 +133,15 @@ function RootNavigator() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <NavigationContainer>
-          <StatusBar barStyle="light-content" backgroundColor={Colors.earth} />
-          <RootNavigator />
-        </NavigationContainer>
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <NavigationContainer>
+            <StatusBar barStyle="light-content" backgroundColor={Colors.earth} />
+            <OfflineBanner />
+            <RootNavigator />
+          </NavigationContainer>
+        </AuthProvider>
+      </I18nProvider>
     </ErrorBoundary>
   );
 }

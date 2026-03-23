@@ -41,6 +41,11 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const refreshAfterPhoneLogin = (data) => {
+    setUser({ username: data.username, id: data.user_id });
+    setProfileData(data.profile);
+  };
+
   const logout = async () => {
     try { await auth.logout(); } catch { /* ignore */ }
     await clearToken();
@@ -54,7 +59,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profileData, loading, login, register, logout, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profileData, loading, login, register, logout, refreshProfile, refreshAfterPhoneLogin }}>
       {children}
     </AuthContext.Provider>
   );

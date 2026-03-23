@@ -8,6 +8,9 @@ urlpatterns = [
     path('auth/register/', api_views.api_register, name='register'),
     path('auth/login/', api_views.api_login, name='login'),
     path('auth/logout/', api_views.api_logout, name='logout'),
+    path('auth/phone/request-otp/', api_views.api_phone_request_otp, name='phone_request_otp'),
+    path('auth/phone/verify-otp/', api_views.api_phone_verify_otp, name='phone_verify_otp'),
+    path('auth/phone/register/', api_views.api_phone_register, name='phone_register'),
 
     # Profile
     path('profile/', api_views.api_my_profile, name='my_profile'),
@@ -47,4 +50,9 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', api_views.api_dashboard, name='dashboard'),
+
+    # Payments
+    path('payments/', api_views.api_my_payments, name='my_payments'),
+    path('payments/create/', api_views.api_create_payment, name='create_payment'),
+    path('payments/<int:payment_id>/confirm/', api_views.api_confirm_payment, name='confirm_payment'),
 ]

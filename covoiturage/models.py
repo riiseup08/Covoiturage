@@ -240,6 +240,51 @@ class Message(models.Model):
         return f"{self.sender.username}: {self.content[:50]}"
 
 
+class Payment(models.Model):
+    """Mobile Money / Cash payment tracking for trip bookings."""
+    PAYMENT_METHOD_CHOICES = [
+        ('mobile_money', 'Mobile Money'),
+        ('cash', 'Espèces'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'En attente'),
+        ('completed', 'Complété'),
+        ('failed', 'Échoué'),
+        ('refunded', 'Remboursé'),
+    ]
+    PROVIDER_CHOICES = [
+        ('mtn', 'MTN Mobile Money'),
+        ('orange', 'Orange Money'),
+        ('moov', 'Moov Money'),
+        ('airtel', 'Airtel Money'),
+        ('wave', 'Wave'),
+        ('cash', 'Espèces'),
+    ]
+
+    correspondance = models.ForeignKey(Correspondance, on_delete=models.CASCADE, related_name='payments')
+    payer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments_made')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments_received')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3, default='XAF')
+    method = models.CharField(max_length=15, choices=PAYMENT_METHOD_CHOICES, default='mobile_money')
+    provider = models.CharField(max_length=10, choices=PROVIDER_CHOICES, blank=True, default='')
+    phone_number = models.CharField(max_length=20, blank=True, default='')
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+    transaction_ref = models.CharField(max_length=100, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['payer', '-created_at']),
+            models.Index(fields=['correspondance', 'status']),
+        ]
+
+    def __str__(self):
+        return f"Paiement {self.amount} {self.currency} - {self.payer.username} -> {self.receiver.username}"
+
+
 class PhoneOTP(models.Model):
     """OTP codes for phone-based authentication."""
     phone = models.CharField(max_length=20, db_index=True)

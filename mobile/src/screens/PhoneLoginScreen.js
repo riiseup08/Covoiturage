@@ -3,28 +3,28 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } fr
 import { Colors, Spacing, Radius } from '../theme';
 import Input from '../components/Input';
 import Button from '../components/Button';
-import { useAuth } from '../context/AuthContext';
+import { auth } from '../api/client';
 import { useI18n } from '../i18n';
 
-export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
-  const { t, lang, setLang } = useI18n();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+export default function PhoneLoginScreen({ navigation }) {
+  const { t } = useI18n();
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleLogin = async () => {
-    if (!username.trim() || !password) {
-      setError(t('fillAllFields'));
+  const handleSendOtp = async () => {
+    const cleaned = phone.trim();
+    if (!cleaned) {
+      setError(t('phoneInvalid'));
       return;
     }
     setLoading(true);
     setError('');
     try {
-      await login(username.trim(), password);
+      const data = await auth.phoneRequestOtp(cleaned);
+      navigation.navigate('PhoneVerify', { phone: data.phone });
     } catch (e) {
-      setError(e.message || t('loginError'));
+      setError(e.message || t('error'));
     } finally {
       setLoading(false);
     }
@@ -33,43 +33,25 @@ export default function LoginScreen({ navigation }) {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Language toggle */}
-        <View style={styles.langRow}>
-          <Text
-            style={[styles.langBtn, lang === 'fr' && styles.langActive]}
-            onPress={() => setLang('fr')}
-          >FR</Text>
-          <Text
-            style={[styles.langBtn, lang === 'en' && styles.langActive]}
-            onPress={() => setLang('en')}
-          >EN</Text>
-        </View>
-
         <View style={styles.header}>
-          <Text style={styles.logo}>🚗</Text>
-          <Text style={styles.title}>Covoiturage</Text>
-          <Text style={styles.subtitle}>{t('login')}</Text>
+          <Text style={styles.logo}>📱</Text>
+          <Text style={styles.title}>{t('phoneLogin')}</Text>
+          <Text style={styles.subtitle}>Cameroun (+237)</Text>
         </View>
 
         <View style={styles.form}>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <Input
-            label={t('username')}
-            placeholder={t('username')}
-            value={username}
-            onChangeText={setUsername}
+            label={t('phoneNumber')}
+            placeholder={t('phonePlaceholder')}
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
             autoCapitalize="none"
-            autoCorrect={false}
           />
-          <Input
-            label={t('password')}
-            placeholder={t('password')}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <Button title={t('login')} onPress={handleLogin} loading={loading} />
+
+          <Button title={t('sendCode')} onPress={handleSendOtp} loading={loading} />
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
@@ -78,9 +60,9 @@ export default function LoginScreen({ navigation }) {
           </View>
 
           <Button
-            title={t('usePhone')}
+            title={t('usePassword')}
             variant="secondary"
-            onPress={() => navigation.navigate('PhoneLogin')}
+            onPress={() => navigation.navigate('Login')}
           />
 
           <View style={styles.linkRow}>
@@ -96,22 +78,10 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: Spacing.lg },
-  langRow: {
-    flexDirection: 'row', justifyContent: 'center', gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  langBtn: {
-    paddingHorizontal: 14, paddingVertical: 6, borderRadius: Radius.full,
-    borderWidth: 1, borderColor: Colors.border, color: Colors.textMuted,
-    fontSize: 13, fontWeight: '600', overflow: 'hidden',
-  },
-  langActive: {
-    backgroundColor: Colors.earth, borderColor: Colors.earth, color: Colors.white,
-  },
   header: { alignItems: 'center', marginBottom: Spacing.xl },
   logo: { fontSize: 48 },
-  title: { fontSize: 28, fontWeight: 'bold', color: Colors.earth, marginTop: Spacing.sm },
-  subtitle: { fontSize: 14, color: Colors.textLight, marginTop: Spacing.xs },
+  title: { fontSize: 24, fontWeight: 'bold', color: Colors.earth, marginTop: Spacing.sm },
+  subtitle: { fontSize: 13, color: Colors.textMuted, marginTop: Spacing.xs },
   form: {
     backgroundColor: Colors.bgCard,
     borderRadius: Radius.lg,

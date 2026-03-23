@@ -67,6 +67,9 @@ export const auth = {
   login: (username, password) => request('POST', '/auth/login/', { username, password }, true),
   register: (data) => request('POST', '/auth/register/', data, true),
   logout: () => request('POST', '/auth/logout/'),
+  phoneRequestOtp: (phone) => request('POST', '/auth/phone/request-otp/', { phone }, true),
+  phoneVerifyOtp: (phone, code) => request('POST', '/auth/phone/verify-otp/', { phone, code }, true),
+  phoneRegister: (data) => request('POST', '/auth/phone/register/', data, true),
 };
 
 // ─── Profile ──────────────────────────────────────────────
@@ -125,4 +128,11 @@ export const messaging = {
 // ─── Dashboard ────────────────────────────────────────────
 export const dashboard = {
   stats: () => request('GET', '/dashboard/'),
+};
+
+// ─── Payments ─────────────────────────────────────────────
+export const payments = {
+  mine: () => request('GET', '/payments/'),
+  create: (data) => request('POST', '/payments/create/', data),
+  confirm: (id) => request('POST', `/payments/${id}/confirm/`),
 };

@@ -12,15 +12,17 @@ from rest_framework.response import Response
 
 from .models import (
     Profile, Voyage, Demande, Correspondance,
-    Avis, Notification, Message,
+    Avis, Notification, Message, Payment, PhoneOTP,
 )
 from .serializers import (
     ProfileSerializer, ProfileUpdateSerializer, UserRegistrationSerializer,
     VoyageSerializer, VoyageCreateSerializer,
     DemandeSerializer, CorrespondanceSerializer,
     AvisSerializer, NotificationSerializer, MessageSerializer,
+    PaymentSerializer, PaymentCreateSerializer,
 )
 from .views import _geocode_voyage
+from .sms import normalize_phone, validate_african_phone, send_otp_sms
 
 
 # ─── Auth ───────────────────────────────────────────────────────
@@ -336,3 +338,133 @@ def api_dashboard(request):
         'review_count': review_count,
         'unread_notifications': unread_notif,
     })
+
+
+# ─── Phone OTP Authentication ──────────────────────────────────
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_phone_request_otp(request):
+    """Send OTP to a phone number (for login or registration)."""
+    phone = request.data.get('phone', '').strip()
+    phone = normalize_phone(phone)
+    if not phone or not validate_african_phone(phone):
+        return Response({'error': 'Numéro de téléphone africain invalide.'}, status=400)
+    otp = PhoneOTP.generate(phone)
+    send_otp_sms(phone, otp.code)
+    return Response({'detail': 'Code OTP envoyé.', 'phone': phone})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_phone_verify_otp(request):
+    """Verify OTP and log in (if user exists) or return needs_register."""
+    phone = normalize_phone(request.data.get('phone', '').strip())
+    code = request.data.get('code', '').strip()
+    if not phone or not code:
+        return Response({'error': 'Téléphone et code requis.'}, status=400)
+    if not PhoneOTP.verify(phone, code):
+        return Response({'error': 'Code invalide ou expiré.'}, status=400)
+    # Check if user exists with this phone
+    profile = Profile.objects.filter(phone=phone).select_related('user').first()
+    if profile:
+        profile.phone_verified = True
+        profile.save(update_fields=['phone_verified'])
+        token, _ = Token.objects.get_or_create(user=profile.user)
+        return Response({
+            'status': 'authenticated',
+            'token': token.key,
+            'user_id': profile.user.id,
+            'username': profile.user.username,
+            'profile': ProfileSerializer(profile).data,
+        })
+    return Response({'status': 'needs_register', 'phone': phone})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_phone_register(request):
+    """Register a new user with a verified phone number."""
+    phone = normalize_phone(request.data.get('phone', '').strip())
+    username = request.data.get('username', '').strip()
+    if not phone or not username:
+        return Response({'error': 'Téléphone et nom d\'utilisateur requis.'}, status=400)
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'Ce nom d\'utilisateur est déjà pris.'}, status=400)
+    # Create user without password (phone-auth only)
+    user = User.objects.create_user(
+        username=username,
+        email=request.data.get('email', ''),
+        password=None,
+    )
+    user.set_unusable_password()
+    user.save()
+    profile = user.profile
+    profile.phone = phone
+    profile.phone_verified = True
+    profile.save(update_fields=['phone', 'phone_verified'])
+    token, _ = Token.objects.get_or_create(user=user)
+    return Response({
+        'token': token.key,
+        'user_id': user.id,
+        'username': user.username,
+        'profile': ProfileSerializer(profile).data,
+    }, status=status.HTTP_201_CREATED)
+
+
+# ─── Payments (Mobile Money / Cash) ────────────────────────────
+
+@api_view(['POST'])
+def api_create_payment(request):
+    """Initiate a payment for a validated match."""
+    serializer = PaymentCreateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    try:
+        corr = Correspondance.objects.select_related(
+            'voyage', 'voyage__conducteur', 'demande', 'demande__passager'
+        ).get(id=data['correspondance_id'], demande__passager=request.user, is_validated=True)
+    except Correspondance.DoesNotExist:
+        return Response({'error': 'Match validé introuvable.'}, status=404)
+    # Prevent duplicate pending payments
+    if Payment.objects.filter(correspondance=corr, payer=request.user, status='pending').exists():
+        return Response({'error': 'Un paiement est déjà en cours.'}, status=400)
+    import secrets
+    payment = Payment.objects.create(
+        correspondance=corr,
+        payer=request.user,
+        receiver=corr.voyage.conducteur,
+        amount=corr.voyage.prix_par_place * corr.demande.places,
+        currency=corr.voyage.currency,
+        method=data['method'],
+        provider=data.get('provider', ''),
+        phone_number=data.get('phone_number', ''),
+        transaction_ref=f'COV-{secrets.token_hex(6).upper()}',
+    )
+    if data['method'] == 'cash':
+        payment.status = 'completed'
+        payment.save(update_fields=['status'])
+    return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def api_my_payments(request):
+    """List payments made or received by the current user."""
+    made = Payment.objects.filter(payer=request.user).select_related('receiver', 'correspondance')
+    received = Payment.objects.filter(receiver=request.user).select_related('payer', 'correspondance')
+    return Response({
+        'payments_made': PaymentSerializer(made, many=True).data,
+        'payments_received': PaymentSerializer(received, many=True).data,
+    })
+
+
+@api_view(['POST'])
+def api_confirm_payment(request, payment_id):
+    """Driver confirms receipt of cash payment."""
+    try:
+        payment = Payment.objects.get(id=payment_id, receiver=request.user, status='pending')
+    except Payment.DoesNotExist:
+        return Response({'error': 'Paiement introuvable.'}, status=404)
+    payment.status = 'completed'
+    payment.save(update_fields=['status'])
+    return Response(PaymentSerializer(payment).data)
