@@ -12,7 +12,7 @@ from rest_framework.response import Response
 
 from .models import (
     Profile, Voyage, Demande, Correspondance,
-    Avis, Notification, Message, Payment, PhoneOTP,
+    Avis, Notification, Message, Payment, PhoneOTP, Wallet, WalletTransaction,
 )
 from .serializers import (
     ProfileSerializer, ProfileUpdateSerializer, UserRegistrationSerializer,
@@ -20,6 +20,7 @@ from .serializers import (
     DemandeSerializer, CorrespondanceSerializer,
     AvisSerializer, NotificationSerializer, MessageSerializer,
     PaymentSerializer, PaymentCreateSerializer,
+    WalletSerializer, WalletTransactionSerializer, WalletTopupRequestSerializer,
 )
 from .views import _geocode_voyage
 from .sms import normalize_phone, validate_african_phone, send_otp_sms
@@ -467,4 +468,111 @@ def api_confirm_payment(request, payment_id):
         return Response({'error': 'Paiement introuvable.'}, status=404)
     payment.status = 'completed'
     payment.save(update_fields=['status'])
+    
+    # Auto-deduct commission for cash payments from driver wallet
+    if payment.method == 'cash':
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        if payment.calculate_commission() > 0:
+            wallet.balance -= payment.commission_amount
+            wallet.save(update_fields=['balance', 'updated_at'])
+            WalletTransaction.objects.create(
+                wallet=wallet,
+                transaction_type='commission_deducted',
+                amount=payment.commission_amount,
+                currency=payment.currency,
+                description=f"Commission prélevée - Trajet {payment.correspondance.voyage.id}",
+                related_payment=payment,
+            )
+    
     return Response(PaymentSerializer(payment).data)
+
+
+# ─── Wallet (Driver Commission System) ─────────────────────────
+
+@api_view(['GET'])
+def api_wallet_balance(request):
+    """Get driver's wallet balance and status."""
+    if not request.user.profile.is_driver:
+        return Response({'error': 'Vous devez être chauffeur.'}, status=403)
+    wallet, created = Wallet.objects.get_or_create(user=request.user)
+    return Response(WalletSerializer(wallet).data)
+
+
+@api_view(['POST'])
+def api_request_topup(request):
+    """Request wallet top-up via Mobile Money."""
+    if not request.user.profile.is_driver:
+        return Response({'error': 'Vous devez être chauffeur.'}, status=403)
+    
+    serializer = WalletTopupRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    
+    # Create placeholder Payment record for top-up tracking
+    payment = Payment.objects.create(
+        payer=request.user,
+        receiver=request.user,  # Self-payment for wallet top-up
+        amount=data['amount'],
+        currency='XAF',
+        method='mobile_money',
+        provider=data['provider'],
+        phone_number=data['phone_number'],
+        transaction_ref=f'TOPUP-{secrets.token_hex(6).upper()}',
+        correspondance_id=None,  # No trip associated
+    )
+    
+    # In production, integrate with payment provider API here
+    # For now, return pending status
+    return Response({
+        'status': 'pending',
+        'transaction_ref': payment.transaction_ref,
+        'amount': payment.amount,
+        'currency': payment.currency,
+        'provider': payment.provider,
+        'message': f'Envoyez {data["amount"]} XAF à {data["phone_number"]} via {data["provider"]}'
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+def api_confirm_topup(request, payment_id):
+    """Confirm wallet top-up (called by payment webhook or user confirmation)."""
+    try:
+        payment = Payment.objects.get(id=payment_id, payer=request.user, status='pending')
+    except Payment.DoesNotExist:
+        return Response({'error': 'Paiement introuvable.'}, status=404)
+    
+    # Mark payment as completed
+    payment.status = 'completed'
+    payment.save(update_fields=['status'])
+    
+    # Add funds to wallet
+    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+    wallet.balance += payment.amount
+    wallet.save(update_fields=['balance', 'updated_at'])
+    
+    # Record as wallet transaction
+    WalletTransaction.objects.create(
+        wallet=wallet,
+        transaction_type='topup',
+        amount=payment.amount,
+        currency=payment.currency,
+        description=f"Recharge via {payment.get_provider_display()}",
+        related_payment=payment,
+    )
+    
+    return Response({
+        'status': 'completed',
+        'wallet_balance': str(wallet.balance),
+        'message': 'Recharge réussie!'
+    })
+
+
+@api_view(['GET'])
+def api_wallet_transactions(request):
+    """Get wallet transaction history."""
+    if not request.user.profile.is_driver:
+        return Response({'error': 'Vous devez être chauffeur.'}, status=403)
+    
+    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+    transactions = wallet.transactions.all()[:50]  # Last 50 transactions
+    return Response(WalletTransactionSerializer(transactions, many=True).data)

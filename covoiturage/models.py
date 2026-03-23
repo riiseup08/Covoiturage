@@ -240,6 +240,55 @@ class Message(models.Model):
         return f"{self.sender.username}: {self.content[:50]}"
 
 
+class Wallet(models.Model):
+    """Driver wallet for commission collection and cash ride settlements."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    currency = models.CharField(max_length=3, default='XAF')
+    is_active = models.BooleanField(default=True, help_text="Drivers must have an active wallet")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['user', 'is_active'])]
+
+    def __str__(self):
+        return f"Wallet de {self.user.username}: {self.balance} {self.currency}"
+
+    @property
+    def low_balance(self):
+        """True if balance is low (less than 5,000 XAF equivalent)."""
+        return self.balance < 5000
+
+
+class WalletTransaction(models.Model):
+    """Transaction log: top-ups, commissions deducted, withdrawals."""
+    TYPE_CHOICES = [
+        ('topup', 'Recharge'),
+        ('commission_deducted', 'Commission prélevée'),
+        ('withdrawal', 'Retrait'),
+        ('refund', 'Remboursement'),
+    ]
+    
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, default='XAF')
+    description = models.TextField(blank=True, default='')
+    related_payment = models.ForeignKey('Payment', on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['wallet', '-created_at']),
+            models.Index(fields=['transaction_type', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.get_transaction_type_display()} {self.amount} {self.currency} - {self.wallet.user.username}"
+
+
 class Payment(models.Model):
     """Mobile Money / Cash payment tracking for trip bookings."""
     PAYMENT_METHOD_CHOICES = [
@@ -271,6 +320,8 @@ class Payment(models.Model):
     phone_number = models.CharField(max_length=20, blank=True, default='')
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
     transaction_ref = models.CharField(max_length=100, blank=True, default='')
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=10.0, help_text="Commission percentage (e.g. 10 for 10%)")
+    commission_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Calculated commission for platform")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -283,6 +334,11 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"Paiement {self.amount} {self.currency} - {self.payer.username} -> {self.receiver.username}"
+    
+    def calculate_commission(self):
+        """Calculate commission based on rate."""
+        self.commission_amount = (self.amount * self.commission_rate) / 100
+        return self.commission_amount
 
 
 class PhoneOTP(models.Model):

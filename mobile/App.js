@@ -28,6 +28,7 @@ import NotificationsScreen from './src/screens/NotificationsScreen';
 import MatchesScreen from './src/screens/MatchesScreen';
 import ConversationScreen from './src/screens/ConversationScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
+import WalletScreen from './src/screens/WalletScreen';
 
 // Error boundary to catch and display runtime errors on web
 class ErrorBoundary extends React.Component {
@@ -112,6 +113,7 @@ function MainStack() {
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ title: t('tabProfile') }} />
       <Stack.Screen name="Conversation" component={ConversationScreen} options={{ title: 'Conversation' }} />
       <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: t('paymentTitle') }} />
+      <Stack.Screen name="Wallet" component={WalletScreen} options={{ title: t('wallet') }} />
     </Stack.Navigator>
   );
 }

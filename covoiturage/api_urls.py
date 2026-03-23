@@ -55,4 +55,10 @@ urlpatterns = [
     path('payments/', api_views.api_my_payments, name='my_payments'),
     path('payments/create/', api_views.api_create_payment, name='create_payment'),
     path('payments/<int:payment_id>/confirm/', api_views.api_confirm_payment, name='confirm_payment'),
+
+    # Wallet (Driver Commission System)
+    path('wallet/balance/', api_views.api_wallet_balance, name='wallet_balance'),
+    path('wallet/topup/request/', api_views.api_request_topup, name='request_topup'),
+    path('wallet/topup/<int:payment_id>/confirm/', api_views.api_confirm_topup, name='confirm_topup'),
+    path('wallet/transactions/', api_views.api_wallet_transactions, name='wallet_transactions'),
 ]

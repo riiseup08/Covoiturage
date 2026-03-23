@@ -136,3 +136,12 @@ export const payments = {
   create: (data) => request('POST', '/payments/create/', data),
   confirm: (id) => request('POST', `/payments/${id}/confirm/`),
 };
+
+// ─── Wallet (Driver Commission) ────────────────────────────
+export const wallet = {
+  balance: () => request('GET', '/wallet/balance/'),
+  requestTopup: (data) => request('POST', '/wallet/topup/request/', data),
+  confirmTopup: (id) => request('POST', `/wallet/topup/${id}/confirm/`),
+  transactions: () => request('GET', '/wallet/transactions/'),
+};
+

@@ -144,6 +144,21 @@ export default {
   markAllRead: 'Tout marquer comme lu',
   noNotifications: 'Aucune notification',
   
+  // Wallet (Driver Commission)
+  wallet: 'Portefeuille',
+  walletBalance: 'Solde du portefeuille',
+  walletDescription: 'Votre portefeuille accumule les commissions sur les trajets en espèces',
+  addBalance: 'Ajouter du solde',
+  topUp: 'Recharge',
+  topupAmount: 'Montant de la recharge',
+  topupInitiated: 'Recharge initiée. Veuillez confirmer sur votre téléphone.',
+  confirmTopup: 'Confirmer la recharge',
+  minimumTopup: 'Montant minimum: 100 XAF',
+  recentTransactions: 'Transactions récentes',
+  noTransactions: 'Aucune transaction pour l\'instant',
+  lowBalance: 'Solde faible. Faites une recharge.',
+  failedToLoadWallet: 'Impossible de charger le portefeuille',
+  
   // Offline
   offlineMode: 'Mode hors-ligne',
   offlineBanner: 'Pas de connexion internet',

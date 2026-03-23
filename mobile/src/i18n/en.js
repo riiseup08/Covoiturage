@@ -144,6 +144,21 @@ export default {
   markAllRead: 'Mark all as read',
   noNotifications: 'No notifications',
   
+  // Wallet (Driver Commission)
+  wallet: 'Wallet',
+  walletBalance: 'Wallet balance',
+  walletDescription: 'Your wallet collects commissions from cash rides',
+  addBalance: 'Add balance',
+  topUp: 'Top up',
+  topupAmount: 'Top-up amount',
+  topupInitiated: 'Top-up initiated. Please confirm on your phone.',
+  confirmTopup: 'Confirm top-up',
+  minimumTopup: 'Minimum top-up amount is 100 XAF',
+  recentTransactions: 'Recent transactions',
+  noTransactions: 'No transactions yet',
+  lowBalance: 'Low balance. Add funds.',
+  failedToLoadWallet: 'Failed to load wallet',
+  
   // Offline
   offlineMode: 'Offline mode',
   offlineBanner: 'No internet connection',

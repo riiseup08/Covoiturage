@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import (
     Profile, Voyage, Demande, Correspondance,
-    Avis, Notification, Message, Payment,
+    Avis, Notification, Message, Payment, Wallet, WalletTransaction,
 )
 
 
@@ -166,3 +166,50 @@ class PaymentCreateSerializer(serializers.Serializer):
     method = serializers.ChoiceField(choices=['mobile_money', 'cash'])
     provider = serializers.ChoiceField(choices=['mtn', 'orange', 'moov', 'airtel', 'wave', 'cash'], required=False, default='')
     phone_number = serializers.CharField(max_length=20, required=False, default='')
+
+
+class WalletTransactionSerializer(serializers.ModelSerializer):
+    """Transaction history for wallet (topups, commissions, etc)."""
+    type_display = serializers.CharField(source='get_transaction_type_display', read_only=True)
+    
+    class Meta:
+        model = WalletTransaction
+        fields = [
+            'id', 'transaction_type', 'type_display', 'amount', 'currency',
+            'description', 'created_at'
+        ]
+        read_only_fields = ['transaction_type', 'amount', 'currency', 'created_at']
+
+
+class WalletSerializer(serializers.ModelSerializer):
+    """Driver wallet showing balance and recent transactions."""
+    username = serializers.CharField(source='user.username', read_only=True)
+    low_balance = serializers.BooleanField(read_only=True)
+    recent_transactions = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Wallet
+        fields = [
+            'id', 'username', 'balance', 'currency', 'is_active',
+            'low_balance', 'created_at', 'updated_at', 'recent_transactions'
+        ]
+        read_only_fields = ['id', 'balance', 'currency', 'is_active', 'created_at', 'updated_at']
+    
+    def get_recent_transactions(self, obj):
+        """Get last 10 transactions."""
+        transactions = obj.transactions.all()[:10]
+        return WalletTransactionSerializer(transactions, many=True).data
+
+
+class WalletTopupRequestSerializer(serializers.Serializer):
+    """Request for wallet top-up via Mobile Money."""
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    provider = serializers.ChoiceField(choices=['mtn', 'orange', 'moov', 'airtel', 'wave'])
+    phone_number = serializers.CharField(max_length=20)
+    
+    def validate_amount(self, value):
+        if value < 100:
+            raise serializers.ValidationError("Minimum top-up amount is 100 XAF")
+        if value > 1000000:
+            raise serializers.ValidationError("Maximum top-up amount is 1,000,000 XAF")
+        return value
