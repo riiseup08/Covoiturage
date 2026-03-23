@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').strip().lower() in ('1', 'true', 'yes')
 
 # En prod, ajouter votre domaine (ex. covoiturage-xxx.onrender.com). Séparer par des virgules si plusieurs.
 _ALLOWED = os.environ.get('ALLOWED_HOSTS', '')
@@ -67,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'covoiturage.middleware.RateLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'carpoolconfig.urls'
@@ -142,6 +143,8 @@ SHORT_DATE_FORMAT = 'd/m/Y'
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'templates' / 'static']
 
 # Media files (uploaded files)
 MEDIA_URL = '/media/'
@@ -152,11 +155,26 @@ LOGIN_REDIRECT_URL = 'covoiturage:dashboard'
 # Rediriger vers le landing après la déconnexion
 LOGOUT_REDIRECT_URL = 'covoiturage:landing'
 
-# Connexion avec email ou nom d'utilisateur
+# Connexion avec email, nom d'utilisateur, ou téléphone + OTP
 AUTHENTICATION_BACKENDS = [
+    'covoiturage.backends.PhoneOTPBackend',
     'covoiturage.backends.EmailOrUsernameBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+# ── SMS / OTP Configuration ───────────────────────────────────────────
+# Backend: 'console' (dev), 'africastalking', 'twilio'
+SMS_BACKEND = os.environ.get('SMS_BACKEND', 'console')
+
+# Africa's Talking (pan-African SMS gateway - recommended for production)
+AT_USERNAME = os.environ.get('AT_USERNAME', '')
+AT_API_KEY = os.environ.get('AT_API_KEY', '')
+AT_SENDER_ID = os.environ.get('AT_SENDER_ID', None)
+
+# Twilio (fallback)
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_FROM_NUMBER = os.environ.get('TWILIO_FROM_NUMBER', '')
 
 # Email (mot de passe oublié, erreurs admin)
 # En prod : définir EMAIL_BACKEND + variables SMTP dans les variables d'environnement.
@@ -199,3 +217,34 @@ NOMINATIM_USER_AGENT = os.environ.get('NOMINATIM_USER_AGENT', 'covoiturage-geoco
 NOMINATIM_TIMEOUT = _env_int('NOMINATIM_TIMEOUT', 5)
 NOMINATIM_LANGUAGE = os.environ.get('NOMINATIM_LANGUAGE', 'fr')
 NOMINATIM_MIN_DELAY = _env_int('NOMINATIM_MIN_DELAY', 1)
+
+# ── Security Hardening (applied in production when DEBUG=False) ───────
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
+# Default cache (used for rate limiting; switch to Redis in production)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'covoiturage': {'handlers': ['console'], 'level': 'INFO'},
+    },
+}

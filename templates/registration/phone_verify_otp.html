@@ -1,0 +1,49 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Vérification OTP - Covoit.Africa{% endblock %}
+
+{% block body_attrs %}style="padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: 100vh;"{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --container-width: 420px; }
+    .otp-card { padding: 40px; text-align: center; }
+    .otp-card h1 { margin-bottom: 8px; }
+    .otp-card .subtitle { color: #888; font-size: 15px; margin-bottom: 5px; }
+    .phone-display { font-weight: 700; color: var(--color-earth); font-size: 18px; margin-bottom: 25px; }
+    .otp-input input { text-align: center; font-size: 28px; letter-spacing: 10px; padding: 16px; }
+    .expire-note { font-size: 13px; color: #888; margin-top: 10px; }
+    .resend-link { margin-top: 15px; font-size: 14px; }
+    .resend-link a { color: var(--color-earth); font-weight: 600; text-decoration: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+        <div class="form-container otp-card">
+            <h1>🔐 Vérification</h1>
+            <p class="subtitle">Entrez le code reçu par SMS</p>
+            <p class="phone-display">{{ phone }}</p>
+            {% if form.errors %}
+            <div class="error-box" style="text-align: left;">
+                <ul>{% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}</ul>
+            </div>
+            {% endif %}
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.phone }}
+                <div class="form-group otp-input">
+                    {{ form.otp_code }}
+                </div>
+                <button type="submit" class="btn btn-submit" style="width: 100%;">Vérifier</button>
+            </form>
+            <p class="expire-note">Le code expire dans 10 minutes</p>
+            <p class="resend-link"><a href="{% url 'covoiturage:phone_resend_otp' %}">Renvoyer le code</a></p>
+        </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var inp = document.querySelector('.otp-input input');
+if (inp) { inp.focus(); inp.addEventListener('input', function() { if (this.value.length === 6) this.form.submit(); }); }
+</script>
+{% endblock %}

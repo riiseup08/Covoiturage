@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login
+from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -8,11 +8,16 @@ from django.db.models import Q
 from django.utils import timezone
 from django.http import JsonResponse
 from django.conf import settings
+from django.views.decorators.http import require_POST
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.exc import GeocoderServiceError
-from .models import Voyage, Demande, Correspondance, Profile, Avis, Notification, Message
-from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm, MessageForm
+from .models import Voyage, Demande, Correspondance, Profile, Avis, Notification, Message, PhoneOTP
+from .forms import (
+    VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm, MessageForm,
+    PhoneLoginRequestForm, PhoneOTPVerifyForm, PhoneRegisterForm,
+)
+from .sms import send_otp_sms, normalize_phone
 from .notifications import get_unread_count, mark_all_read
 
 PAGE_SIZE = 10
@@ -30,11 +35,9 @@ def landing_view(request):
 
 
 def custom_404(request, exception=None):
-    # Évite de bloquer l'utilisateur sur une page 404.
-    # Redirige vers le tableau de bord si connecté, sinon vers l'accueil.
     if getattr(request, 'user', None) is not None and request.user.is_authenticated:
-        return redirect('covoiturage:dashboard')
-    return redirect('covoiturage:landing')
+        return render(request, '404.html', status=404)
+    return render(request, '404.html', status=404)
 
 
 def register_view(request):
@@ -47,6 +50,138 @@ def register_view(request):
     else:
         form = UserRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})
+
+
+# ── Phone OTP Authentication ──────────────────────────────────────────
+
+def phone_login_view(request):
+    """Step 1: User enters phone number to receive OTP."""
+    if request.user.is_authenticated:
+        return redirect('covoiturage:dashboard')
+
+    if request.method == 'POST':
+        form = PhoneLoginRequestForm(request.POST)
+        if form.is_valid():
+            phone = form.cleaned_data['phone']
+            # Check if a user exists with this phone
+            profile = Profile.objects.filter(phone=phone).first()
+            if not profile:
+                form.add_error('phone', "Aucun compte trouvé avec ce numéro. Inscrivez-vous d'abord.")
+                return render(request, 'registration/phone_login.html', {'form': form})
+            # Generate and send OTP
+            otp = PhoneOTP.generate(phone)
+            send_otp_sms(phone, otp.code)
+            request.session['otp_phone'] = phone
+            request.session['otp_action'] = 'login'
+            return redirect('covoiturage:phone_verify_otp')
+    else:
+        form = PhoneLoginRequestForm()
+    return render(request, 'registration/phone_login.html', {'form': form})
+
+
+def phone_register_view(request):
+    """Quick registration with phone number (no password)."""
+    if request.user.is_authenticated:
+        return redirect('covoiturage:dashboard')
+
+    if request.method == 'POST':
+        form = PhoneRegisterForm(request.POST)
+        if form.is_valid():
+            phone = form.cleaned_data['phone']
+            full_name = form.cleaned_data['full_name']
+            # Generate and send OTP
+            otp = PhoneOTP.generate(phone)
+            send_otp_sms(phone, otp.code)
+            request.session['otp_phone'] = phone
+            request.session['otp_full_name'] = full_name
+            request.session['otp_action'] = 'register'
+            return redirect('covoiturage:phone_verify_otp')
+    else:
+        form = PhoneRegisterForm()
+    return render(request, 'registration/phone_register.html', {'form': form})
+
+
+def phone_verify_otp_view(request):
+    """Step 2: User enters the OTP code received by SMS."""
+    phone = request.session.get('otp_phone')
+    action = request.session.get('otp_action', 'login')
+    if not phone:
+        return redirect('covoiturage:phone_login')
+
+    if request.method == 'POST':
+        form = PhoneOTPVerifyForm(request.POST)
+        if form.is_valid():
+            otp_code = form.cleaned_data['otp_code']
+            submitted_phone = normalize_phone(form.cleaned_data['phone'])
+
+            # Ensure the phone in the form matches the session
+            if submitted_phone != phone:
+                form.add_error(None, "Numéro de téléphone invalide.")
+                return render(request, 'registration/phone_verify_otp.html', {
+                    'form': form, 'phone': phone, 'action': action
+                })
+
+            if action == 'register':
+                # For registration, verify OTP then create user
+                if not PhoneOTP.verify(phone, otp_code):
+                    form.add_error('otp_code', "Code incorrect ou expiré. Réessayez.")
+                    return render(request, 'registration/phone_verify_otp.html', {
+                        'form': form, 'phone': phone, 'action': action
+                    })
+                full_name = request.session.get('otp_full_name', '')
+                parts = full_name.split(maxsplit=1)
+                first_name = parts[0] if parts else full_name
+                last_name = parts[1] if len(parts) > 1 else ''
+                # Generate username from phone (last 8 digits)
+                import secrets
+                username = f"user_{phone[-8:]}_{secrets.token_hex(2)}"
+                user = User.objects.create_user(
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+                user.set_unusable_password()
+                user.save()
+                try:
+                    profile = user.profile
+                except Profile.DoesNotExist:
+                    profile = Profile.objects.create(user=user)
+                profile.phone = phone
+                profile.phone_verified = True
+                profile.save(update_fields=['phone', 'phone_verified'])
+                # Clean session
+                for key in ('otp_phone', 'otp_full_name', 'otp_action'):
+                    request.session.pop(key, None)
+                login(request, user, backend='covoiturage.backends.PhoneOTPBackend')
+                messages.success(request, f"Bienvenue {first_name} ! Votre compte a été créé.")
+                return redirect('covoiturage:dashboard')
+            else:
+                # Login: authenticate via PhoneOTPBackend
+                user = authenticate(request, phone=phone, otp_code=otp_code)
+                if user:
+                    for key in ('otp_phone', 'otp_action'):
+                        request.session.pop(key, None)
+                    login(request, user, backend='covoiturage.backends.PhoneOTPBackend')
+                    return redirect('covoiturage:dashboard')
+                else:
+                    form.add_error('otp_code', "Code incorrect ou expiré. Réessayez.")
+    else:
+        form = PhoneOTPVerifyForm(initial={'phone': phone})
+
+    return render(request, 'registration/phone_verify_otp.html', {
+        'form': form, 'phone': phone, 'action': action
+    })
+
+
+def phone_resend_otp_view(request):
+    """Resend OTP code to the phone number in session."""
+    phone = request.session.get('otp_phone')
+    if not phone:
+        return redirect('covoiturage:phone_login')
+    otp = PhoneOTP.generate(phone)
+    send_otp_sms(phone, otp.code)
+    messages.info(request, "Un nouveau code a été envoyé à votre numéro.")
+    return redirect('covoiturage:phone_verify_otp')
 
 @login_required
 def home_view(request):
@@ -83,6 +218,22 @@ def home_view(request):
     page_d = request.GET.get('page_d', 1)
     page_c = request.GET.get('page_c', 1)
 
+    # Personal analytics
+    from django.db.models import Sum, Avg
+    completed_trips = Voyage.objects.filter(conducteur=request.user, est_termine=True).count()
+    completed_as_passenger = Correspondance.objects.filter(
+        demande__passager=request.user, is_validated=True,
+        refus_conducteur=False, refus_passager=False,
+        voyage__est_termine=True
+    ).count()
+    total_earnings = Voyage.objects.filter(
+        conducteur=request.user, est_termine=True
+    ).aggregate(total=Sum('prix_par_place'))['total'] or 0
+    avg_rating_received = Avis.objects.filter(
+        utilisateur_note=request.user
+    ).aggregate(avg=Avg('note'))['avg']
+    total_reviews_received = Avis.objects.filter(utilisateur_note=request.user).count()
+
     context = {
         'voyages': paginator_v.get_page(page_v),
         'demandes': paginator_d.get_page(page_d),
@@ -91,6 +242,11 @@ def home_view(request):
             'total_voyages': voyages.count(),
             'total_demandes': demandes.count(),
             'total_correspondances': correspondances.count(),
+            'completed_trips': completed_trips,
+            'completed_as_passenger': completed_as_passenger,
+            'total_earnings': total_earnings,
+            'avg_rating': avg_rating_received,
+            'total_reviews': total_reviews_received,
         },
         'unread_count': get_unread_count(request.user),
     }
@@ -149,7 +305,12 @@ def add_demande(request):
             messages.success(request, 'Votre demande a été publiée avec succès.')
             return redirect('covoiturage:dashboard')
     else:
-        form = DemandeForm()
+        initial = {}
+        if request.GET.get('ville_depart'):
+            initial['ville_depart'] = request.GET['ville_depart']
+        if request.GET.get('ville_arrivee'):
+            initial['ville_arrivee'] = request.GET['ville_arrivee']
+        form = DemandeForm(initial=initial)
     return render(request, 'voyages/add_demande.html', {'form': form})
 
 @login_required
@@ -203,6 +364,12 @@ def validate_correspondance(request, correspondance_id):
         if not correspondance.is_validated:
             correspondance.is_validated = True
             correspondance.save()
+            # Decrement available seats
+            voyage = correspondance.voyage
+            places_needed = correspondance.demande.places
+            if voyage.places_disponibles >= places_needed:
+                voyage.places_disponibles -= places_needed
+                voyage.save(update_fields=['places_disponibles'])
             messages.success(request, f"Vous avez validé le trajet avec {correspondance.demande.passager.username}.")
         return redirect('covoiturage:dashboard')
     return redirect('covoiturage:dashboard')
@@ -246,6 +413,7 @@ def mark_voyage_termine(request, voyage_id):
     return redirect('covoiturage:dashboard')
 
 
+@login_required
 def geocode_forward(request):
     """Recherche d'adresse via Nominatim (OpenStreetMap)."""
     query = (request.GET.get('q') or '').strip()
@@ -274,6 +442,7 @@ def geocode_forward(request):
     return JsonResponse({'results': results})
 
 
+@login_required
 def geocode_reverse(request):
     """Inverse: coord -> adresse via Nominatim."""
     try:
@@ -313,6 +482,7 @@ def search_trajets(request):
     ville_arrivee = request.GET.get('ville_arrivee', '').strip()
     date_str = request.GET.get('date', '').strip()
     type_bagage = request.GET.get('type_bagage', '').strip()
+    women_only = request.GET.get('women_only', '').strip()
     try:
         prix_max = request.GET.get('prix_max')
         prix_max = int(prix_max) if prix_max else None
@@ -341,6 +511,8 @@ def search_trajets(request):
         voyages = voyages.filter(prix_par_place__lte=prix_max)
     if places_min is not None:
         voyages = voyages.filter(places_disponibles__gte=places_min)
+    if women_only == '1':
+        voyages = voyages.filter(women_only=True)
 
     paginator = Paginator(voyages, SEARCH_PAGE_SIZE)
     page = request.GET.get('page', 1)
@@ -354,6 +526,7 @@ def search_trajets(request):
         'type_bagage': type_bagage,
         'prix_max': prix_max,
         'places_min': places_min,
+        'women_only': women_only,
         'Voyage': Voyage,
     }
     return render(request, 'voyages/search_trajets.html', context)
@@ -460,8 +633,9 @@ def notifications_list(request):
 
 
 @login_required
+@require_POST
 def notifications_mark_read(request, notification_id):
-    """Marquer une notification comme lue."""
+    """Marquer une notification comme lue (POST only)."""
     notification = get_object_or_404(Notification, id=notification_id, user=request.user)
     notification.is_read = True
     notification.save()

@@ -1,0 +1,47 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Connexion par téléphone - Covoit.Africa{% endblock %}
+
+{% block body_attrs %}style="padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: 100vh;"{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --container-width: 420px; }
+    .phone-card { padding: 40px; animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .phone-card h1 { text-align: center; margin-bottom: 8px; }
+    .phone-card .subtitle { text-align: center; color: #888; margin-bottom: 25px; font-size: 15px; }
+    .hint { font-size: 13px; color: #888; margin-top: 6px; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #ccc; font-size: 14px; }
+    .divider::before, .divider::after { content: ''; flex: 1; border-top: 1px solid #EBE5D9; }
+    .alt-links { text-align: center; }
+    .alt-links a { display: inline-block; padding: 12px 20px; border: 2px solid #EBE5D9; border-radius: 8px; text-decoration: none; color: var(--color-night); font-weight: 600; font-size: 14px; margin: 4px; transition: 0.2s; }
+    .alt-links a:hover { border-color: var(--color-earth); color: var(--color-earth); }
+</style>
+{% endblock %}
+
+{% block content %}
+        <div class="form-container phone-card">
+            <h1>☎️ Connexion par téléphone</h1>
+            <p class="subtitle">Recevez un code par SMS pour vous connecter</p>
+            {% if form.errors %}
+            <div class="error-box">
+                <ul>{% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}</ul>
+            </div>
+            {% endif %}
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Numéro de téléphone</label>
+                    {{ form.phone }}
+                    <p class="hint">Format : +237 6XX XXX XXX</p>
+                </div>
+                <button type="submit" class="btn btn-submit" style="width: 100%;">Recevoir le code</button>
+            </form>
+            <div class="divider">ou</div>
+            <div class="alt-links">
+                <a href="{% url 'login' %}">🔑 Mot de passe</a>
+                <a href="{% url 'covoiturage:phone_register' %}">✨ Inscription</a>
+            </div>
+        </div>
+{% endblock %}

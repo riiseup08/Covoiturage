@@ -1,87 +1,60 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Conversation avec {{ other_user.username }} - Covoit.Africa</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        body { background-color: var(--color-bg); color: var(--color-night); padding: 20px; height: 100vh; display: flex; flex-direction: column; }
+﻿{% extends "base.html" %}
 
-        .chat-container { max-width: 800px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+{% block title %}Conversation - Covoit.Africa{% endblock %}
 
-        .chat-header { background: white; padding: 16px 24px; border-radius: 12px 12px 0 0; box-shadow: 0 2px 10px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .chat-header h1 { font-size: 20px; font-weight: 700; }
-        .chat-header a { text-decoration: none; color: white; background-color: var(--color-night); padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 14px; transition: 0.3s; }
-        .chat-header a:hover { background-color: #333; }
-        .trip-info { font-size: 14px; color: #888; margin-top: 4px; }
+{% block body_attrs %}style="margin: 0; padding: 0;"{% endblock %}
 
-        .chat-messages { flex: 1; overflow-y: auto; background: white; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-height: 200px; max-height: calc(100vh - 280px); border-left: 1px solid #F1EFE9; border-right: 1px solid #F1EFE9; }
+{% block extra_css %}
+<style>
+    .chat-container { display: flex; flex-direction: column; height: 100vh; max-width: 800px; margin: 0 auto; }
+    .chat-header { padding: 18px 24px; background: white; border-bottom: 1px solid #EBE5D9; flex-shrink: 0; }
+    .chat-header h2 { font-size: 18px; margin-bottom: 4px; }
+    .chat-header p { font-size: 14px; color: #888; margin: 0; }
+    .chat-header a { color: var(--color-earth); font-weight: 600; text-decoration: none; font-size: 14px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .msg { max-width: 75%; padding: 12px 16px; border-radius: 14px; font-size: 15px; line-height: 1.5; }
+    .msg.sent { align-self: flex-end; background: var(--color-earth); color: white; border-bottom-right-radius: 4px; }
+    .msg.received { align-self: flex-start; background: white; color: var(--color-night); border: 1px solid #EBE5D9; border-bottom-left-radius: 4px; }
+    .msg .time { font-size: 11px; opacity: 0.7; margin-top: 4px; display: block; }
+    .chat-input { padding: 16px 20px; background: white; border-top: 1px solid #EBE5D9; display: flex; gap: 10px; flex-shrink: 0; }
+    .chat-input textarea { flex: 1; padding: 12px; border: 2px solid #EBE5D9; border-radius: 10px; font-family: 'Outfit'; font-size: 15px; resize: none; }
+    .chat-input textarea:focus { outline: none; border-color: var(--color-earth); }
+    .chat-input button { padding: 12px 24px; background: var(--color-earth); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: 'Outfit'; }
+    .chat-input button:hover { background: var(--color-earth-dark); }
+    .chat-empty { text-align: center; color: #999; margin: auto; }
+</style>
+{% endblock %}
 
-        .msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.5; word-wrap: break-word; }
-        .msg.sent { align-self: flex-end; background: var(--color-earth); color: white; border-bottom-right-radius: 4px; }
-        .msg.received { align-self: flex-start; background: #F1EFE9; color: var(--color-night); border-bottom-left-radius: 4px; }
-        .msg .meta { font-size: 11px; margin-top: 6px; opacity: 0.7; }
-        .msg.sent .meta { text-align: right; }
-
-        .empty-chat { text-align: center; color: #aaa; padding: 40px 20px; font-size: 16px; }
-        .empty-chat .big-icon { font-size: 48px; margin-bottom: 12px; }
-
-        .chat-input { background: white; padding: 16px 24px; border-radius: 0 0 12px 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.04); border-top: 1px solid #F1EFE9; }
-        .chat-input form { display: flex; gap: 12px; align-items: flex-end; }
-        .chat-input textarea { flex: 1; border: 1px solid #E2DFD6; border-radius: 12px; padding: 12px 16px; font-size: 15px; font-family: 'Outfit'; resize: none; outline: none; transition: border 0.2s; }
-        .chat-input textarea:focus { border-color: var(--color-earth); }
-        .chat-input button { background: var(--color-earth); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; font-family: 'Outfit'; transition: 0.3s; white-space: nowrap; }
-        .chat-input button:hover { background: #A64426; }
-
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            .msg { max-width: 88%; }
-            .chat-input form { flex-direction: column; }
-            .chat-input button { width: 100%; }
-        }
-    </style>
-</head>
-<body>
+{% block body %}
     <div class="chat-container">
         <div class="chat-header">
-            <div>
-                <h1>💬 {{ other_user.username }}</h1>
-                <div class="trip-info">{{ correspondance.voyage.ville_depart }} ➔ {{ correspondance.voyage.ville_arrivee }} · {{ correspondance.voyage.date_depart|date:"d M Y" }}</div>
-            </div>
-            <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            <a href="{% url 'covoiturage:dashboard' %}">← Retour</a>
+            <h2>💬 {{ other_user.username }}</h2>
+            <p>{{ correspondance.voyage.ville_depart }} ➔ {{ correspondance.voyage.ville_arrivee }} · {{ correspondance.voyage.date_depart|date:"d/m/Y" }}</p>
         </div>
-
-        <div class="chat-messages" id="chatMessages">
-            {% for msg in chat_messages %}
+        <div class="chat-messages" id="chat-messages">
+            {% for msg in messages_list %}
             <div class="msg {% if msg.sender == request.user %}sent{% else %}received{% endif %}">
                 {{ msg.content }}
-                <div class="meta">{{ msg.created_at|date:"d/m H:i" }}</div>
+                <span class="time">{{ msg.created_at|date:"d/m H:i" }}</span>
             </div>
             {% empty %}
-            <div class="empty-chat">
-                <div class="big-icon">💬</div>
-                <p>Aucun message pour l'instant.</p>
-                <p style="font-size: 14px; margin-top: 6px;">Présentez-vous et organisez votre trajet !</p>
+            <div class="chat-empty">
+                <p>Aucun message. Envoyez le premier ! 💬</p>
             </div>
             {% endfor %}
         </div>
-
-        <div class="chat-input">
-            <form method="post">
-                {% csrf_token %}
-                <textarea name="content" rows="2" placeholder="Écrivez votre message..." maxlength="1000" required></textarea>
-                <button type="submit">Envoyer</button>
-            </form>
-        </div>
+        <form method="POST" class="chat-input">
+            {% csrf_token %}
+            {{ form.content }}
+            <button type="submit">Envoyer</button>
+        </form>
     </div>
+{% endblock %}
 
-    <script>
-        // Auto-scroll to bottom
-        const chatBox = document.getElementById('chatMessages');
-        chatBox.scrollTop = chatBox.scrollHeight;
-    </script>
-</body>
-</html>
+{% block extra_js %}
+<script>
+var c = document.getElementById('chat-messages');
+if (c) c.scrollTop = c.scrollHeight;
+</script>
+{% endblock %}

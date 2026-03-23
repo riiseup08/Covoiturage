@@ -2,33 +2,142 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import Voyage, Demande, Profile, Avis, Message
+from .sms import normalize_phone, validate_african_phone
 from django.utils import timezone
+import re
 
 
 class UserRegistrationForm(UserCreationForm):
-    """Inscription avec email obligatoire."""
-    email = forms.EmailField(
+    """Inscription avec numéro de téléphone obligatoire (email optionnel)."""
+    phone = forms.CharField(
         required=True,
-        label="Adresse email",
+        max_length=20,
+        label="Numéro de téléphone",
+        widget=forms.TextInput(attrs={
+            'placeholder': '+237 6XX XXX XXX',
+            'autocomplete': 'tel',
+            'type': 'tel',
+        })
+    )
+    email = forms.EmailField(
+        required=False,
+        label="Adresse email (optionnel)",
         widget=forms.EmailInput(attrs={'placeholder': 'exemple@email.com', 'autocomplete': 'email'})
     )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'phone', 'email', 'password1', 'password2')
+
+    def clean_phone(self):
+        phone = normalize_phone(self.cleaned_data.get('phone', ''))
+        if not phone:
+            raise forms.ValidationError("Le numéro de téléphone est obligatoire.")
+        if not validate_african_phone(phone):
+            raise forms.ValidationError("Entrez un numéro de téléphone africain valide (ex: +237 6XX XXX XXX).")
+        if Profile.objects.filter(phone=phone).exists():
+            raise forms.ValidationError("Un compte existe déjà avec ce numéro de téléphone.")
+        return phone
 
     def clean_email(self):
         email = self.cleaned_data.get('email', '').strip().lower()
-        if User.objects.filter(email=email).exists():
+        if email and User.objects.filter(email=email).exists():
             raise forms.ValidationError("Un compte existe déjà avec cette adresse email.")
         return email
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data['email'].strip().lower()
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if email:
+            user.email = email
         if commit:
             user.save()
+            # Save phone to profile (profile is auto-created by signal)
+            try:
+                profile = user.profile
+            except Profile.DoesNotExist:
+                profile = Profile.objects.create(user=user)
+            profile.phone = self.cleaned_data['phone']
+            profile.save(update_fields=['phone'])
         return user
+
+
+class PhoneLoginRequestForm(forms.Form):
+    """Step 1: Enter phone number to receive OTP."""
+    phone = forms.CharField(
+        max_length=20,
+        label="Numéro de téléphone",
+        widget=forms.TextInput(attrs={
+            'placeholder': '+237 6XX XXX XXX',
+            'autocomplete': 'tel',
+            'type': 'tel',
+        })
+    )
+
+    def clean_phone(self):
+        phone = normalize_phone(self.cleaned_data.get('phone', ''))
+        if not phone:
+            raise forms.ValidationError("Le numéro de téléphone est obligatoire.")
+        if not validate_african_phone(phone):
+            raise forms.ValidationError("Entrez un numéro de téléphone africain valide.")
+        return phone
+
+
+class PhoneOTPVerifyForm(forms.Form):
+    """Step 2: Enter the OTP code received by SMS."""
+    phone = forms.CharField(widget=forms.HiddenInput())
+    otp_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        label="Code de vérification",
+        widget=forms.TextInput(attrs={
+            'placeholder': '------',
+            'autocomplete': 'one-time-code',
+            'inputmode': 'numeric',
+            'pattern': '[0-9]{6}',
+            'style': 'text-align: center; font-size: 24px; letter-spacing: 8px;',
+        })
+    )
+
+    def clean_otp_code(self):
+        code = self.cleaned_data.get('otp_code', '').strip()
+        if not re.match(r'^\d{6}$', code):
+            raise forms.ValidationError("Le code doit contenir exactement 6 chiffres.")
+        return code
+
+
+class PhoneRegisterForm(forms.Form):
+    """Quick registration with phone number only (no password needed)."""
+    phone = forms.CharField(
+        max_length=20,
+        label="Numéro de téléphone",
+        widget=forms.TextInput(attrs={
+            'placeholder': '+237 6XX XXX XXX',
+            'autocomplete': 'tel',
+            'type': 'tel',
+        })
+    )
+    full_name = forms.CharField(
+        max_length=60,
+        label="Nom complet",
+        widget=forms.TextInput(attrs={'placeholder': 'Ex: Jean Mbarga'})
+    )
+
+    def clean_phone(self):
+        phone = normalize_phone(self.cleaned_data.get('phone', ''))
+        if not phone:
+            raise forms.ValidationError("Le numéro de téléphone est obligatoire.")
+        if not validate_african_phone(phone):
+            raise forms.ValidationError("Entrez un numéro de téléphone africain valide (ex: +237 6XX XXX XXX).")
+        if Profile.objects.filter(phone=phone).exists():
+            raise forms.ValidationError("Un compte existe déjà avec ce numéro. Connectez-vous plutôt.")
+        return phone
+
+    def clean_full_name(self):
+        name = self.cleaned_data.get('full_name', '').strip()
+        if len(name) < 2:
+            raise forms.ValidationError("Entrez votre nom complet.")
+        return name
 
 class AvisForm(forms.ModelForm):
     class Meta:
@@ -45,7 +154,9 @@ class VoyageForm(forms.ModelForm):
         fields = [
             'ville_depart', 'lieu_ramassage', 'ville_arrivee',
             'date_depart', 'date_arrivee', 'places_disponibles', 'prix_par_place',
+            'currency', 'accept_mobile_money', 'accept_cash',
             'plaque_immatriculation', 'modele_voiture', 'type_bagage_accepte',
+            'women_only',
         ]
         widgets = {
             'date_depart': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
@@ -54,6 +165,7 @@ class VoyageForm(forms.ModelForm):
             'plaque_immatriculation': forms.TextInput(attrs={'placeholder': 'Ex: AB 1234 CD'}),
             'modele_voiture': forms.TextInput(attrs={'placeholder': 'Ex: Toyota Corolla, Peugeot 208...'}),
             'type_bagage_accepte': forms.Select(attrs={'class': 'form-select'}),
+            'currency': forms.Select(attrs={'class': 'form-select'}),
         }
 
     def clean(self):
@@ -107,9 +219,24 @@ class DemandeForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'phone', 'is_driver', 'profile_photo']
+        fields = [
+            'bio', 'phone', 'is_driver', 'profile_photo',
+            'whatsapp_number', 'mobile_money_number', 'mobile_money_provider',
+            'gender', 'emergency_contact_name', 'emergency_contact_phone',
+            'id_type', 'id_number', 'id_photo',
+        ]
         widgets = {
             'profile_photo': forms.FileInput(attrs={'accept': 'image/*'}),
+            'phone': forms.TextInput(attrs={'placeholder': '+237 6XX XXX XXX', 'type': 'tel'}),
+            'whatsapp_number': forms.TextInput(attrs={'placeholder': '+237 6XX XXX XXX (optionnel)', 'type': 'tel'}),
+            'mobile_money_number': forms.TextInput(attrs={'placeholder': '+237 6XX XXX XXX', 'type': 'tel'}),
+            'mobile_money_provider': forms.Select(attrs={'class': 'form-select'}),
+            'gender': forms.Select(attrs={'class': 'form-select'}),
+            'emergency_contact_name': forms.TextInput(attrs={'placeholder': 'Nom complet'}),
+            'emergency_contact_phone': forms.TextInput(attrs={'placeholder': '+237 6XX XXX XXX', 'type': 'tel'}),
+            'id_type': forms.TextInput(attrs={'placeholder': "Ex: CNI, Passeport"}),
+            'id_number': forms.TextInput(attrs={'placeholder': 'Numéro du document'}),
+            'id_photo': forms.FileInput(attrs={'accept': 'image/*'}),
         }
 
 

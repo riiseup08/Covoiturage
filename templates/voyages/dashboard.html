@@ -1,99 +1,15 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de bord - Covoit.Africa</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        
-        /* En-tête */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; background: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
-        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
-        .nav-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; transition: 0.3s ease; font-size: 15px; }
-        .nav-links a:hover { background-color: #333; transform: translateY(-2px); }
-        .nav-links a.btn-primary { background-color: var(--color-earth); box-shadow: 0 4px 10px rgba(217, 93, 57, 0.2); }
-        .nav-links a.btn-primary:hover { background-color: #A64426; box-shadow: 0 6px 15px rgba(217, 93, 57, 0.3); }
-        .btn-logout { background: #FDECEA; border: none; color: #D32F2F; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: 'Outfit'; font-size: 15px; }
-        .btn-logout:hover { background: #FAD1CD; transform: translateY(-2px); }
+﻿{% extends "base.html" %}
 
-        /* Titres de sections */
-        .section-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; margin-top: 40px; border-bottom: 2px solid #EBE5D9; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        
-        /* Grille des cartes */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 40px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; transition: transform 0.3s ease; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
-        .card h3 { font-size: 20px; margin-bottom: 15px; color: var(--color-earth); font-weight: 700; }
-        .card p { margin-bottom: 10px; font-size: 15px; color: #555; display: flex; align-items: flex-start; gap: 8px; }
-        .card strong { color: var(--color-night); min-width: 120px; }
-        
-        /* Boutons d'actions dans les cartes */
-        .card-actions { margin-top: 25px; display: flex; gap: 15px; }
-        .btn-edit, .btn-delete { flex: 1; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
-        .btn-edit { background-color: #F1EFE9; color: var(--color-night); }
-        .btn-edit:hover { background-color: #E2DFD6; }
-        .btn-delete { background-color: #FFF5F5; color: #D32F2F; border: 1px solid #FFEBEB; }
-        .btn-delete:hover { background-color: #FDECEA; }
+{% block title %}Tableau de bord - Covoit.Africa{% endblock %}
 
-        /* Messages de notification */
-        .messages { margin-bottom: 20px; }
-        .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-        .alert-success { background-color: #E8F5E9; color: #2E7D32; border-left: 4px solid #2E7D32; }
-        .alert-error { background-color: #FDECEA; color: #D32F2F; border-left: 4px solid #D32F2F; }
-        .alert-info { background-color: #E3F2FD; color: #1565C0; border-left: 4px solid #1565C0; }
-        
-        .empty-state { text-align: center; padding: 50px 20px; background: white; border-radius: 12px; color: #888; border: 2px dashed #EBE5D9; grid-column: 1 / -1; font-size: 16px; }
-        .badge-termine { background: #E0E0E0; color: #616161; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
-        .pagination { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-        .pagination a, .pagination span { padding: 8px 14px; border-radius: 8px; text-decoration: none; background: #F1EFE9; color: var(--color-night); font-weight: 600; }
-        .pagination a:hover { background: var(--color-earth); color: white; }
-        .pagination .current { background: var(--color-earth); color: white; }
-        .btn-refuse { background: #FFF5F5; color: #C62828; border: 1px solid #FFCDD2; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; font-family: 'Outfit'; }
-        .btn-refuse:hover { background: #FDECEA; }
-
-        /* Bloc stats */
-        .stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
-        .stat-box { flex: 1; min-width: 140px; background: white; padding: 20px 24px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.04); border: 1px solid #F1EFE9; text-align: center; }
-        .stat-box .num { font-size: 32px; font-weight: 800; color: var(--color-earth); line-height: 1.2; }
-        .stat-box .label { font-size: 14px; color: #666; margin-top: 4px; }
-        .note-badge { display: inline-block; background: #FFF8E1; color: #F57C00; padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-left: 6px; }
-
-        @media (max-width: 768px) {
-            .header { flex-direction: column; align-items: flex-start; }
-            .nav-links { width: 100%; justify-content: space-between; }
-            .nav-links a, .btn-logout { flex: 1; text-align: center; padding: 10px; font-size: 14px; }
-        }
-    </style>
-</head>
-<body>
-
-    <div class="container">
-        
-        <!-- Messages de succès/erreur -->
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- En-tête -->
-        <div class="header">
+{% block content %}
+        <div class="header header-card">
             <h1>👋 Salut, {{ request.user.username }}</h1>
             <div class="nav-links">
-                <a href="{% url 'covoiturage:notifications_list' %}" class="notification-bell" style="position: relative; background-color: #F1EFE9; color: var(--color-night);">
+                <a href="{% url 'covoiturage:notifications_list' %}" class="notification-bell">
                     🔔
                     {% if unread_count > 0 %}
-                    <span style="position: absolute; top: -5px; right: -5px; background: #D32F2F; color: white; font-size: 11px; font-weight: bold; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ unread_count }}</span>
+                    <span class="notif-count">{{ unread_count }}</span>
                     {% endif %}
                 </a>
                 <a href="{% url 'covoiturage:add_voyage' %}" class="btn-primary">🚗 Publier un trajet</a>
@@ -101,9 +17,7 @@
                 <a href="{% url 'covoiturage:add_demande' %}">🙋‍♂️ Publier une demande de trajet</a>
                 <a href="{% url 'covoiturage:profile' %}">👤 Mon Profil</a>
                 <a href="{% url 'covoiturage:avis_list' %}">⭐ Laisser un avis</a>
-                <a href="/analytics/dashboard/">📊 Analytics</a>
-                
-                <!-- Déconnexion -->
+                <a href="/analytics/dashboard/">📊 Mes statistiques</a>
                 <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0; padding:0;">
                     {% csrf_token %}
                     <button type="submit" class="btn-logout">Déconnexion</button>
@@ -111,7 +25,6 @@
             </div>
         </div>
 
-        <!-- Stats rapides -->
         <div class="stats-row">
             <div class="stat-box">
                 <div class="num">{{ stats.total_voyages }}</div>
@@ -127,21 +40,40 @@
             </div>
         </div>
 
-        <!-- SECTION : MES TRAJETS PROPOSÉS -->
+        <h2 class="section-title">📊 Mes statistiques</h2>
+        <div class="stats-row">
+            <div class="stat-box">
+                <div class="num">{{ stats.completed_trips }}</div>
+                <div class="label">Trajets terminés (conducteur)</div>
+            </div>
+            <div class="stat-box">
+                <div class="num">{{ stats.completed_as_passenger }}</div>
+                <div class="label">Trajets effectués (passager)</div>
+            </div>
+            <div class="stat-box">
+                <div class="num">{{ stats.total_earnings }} FCFA</div>
+                <div class="label">Revenus estimés</div>
+            </div>
+            <div class="stat-box">
+                <div class="num">{% if stats.avg_rating %}{{ stats.avg_rating|floatformat:1 }}/5 ⭐{% else %}—{% endif %}</div>
+                <div class="label">Note moyenne ({{ stats.total_reviews }} avis)</div>
+            </div>
+        </div>
+
         <h2 class="section-title" id="trajets">🚗 Mes trajets proposés (Conducteur)</h2>
         <div class="grid">
             {% for voyage in voyages %}
             <div class="card">
-                <h3>{{ voyage.ville_depart }} ➔ {{ voyage.ville_arrivee }}{% if voyage.est_termine %} <span class="badge-termine">Terminé</span>{% endif %}</h3>
+                <h3>{{ voyage.ville_depart }} ➔ {{ voyage.ville_arrivee }}{% if voyage.est_termine %} <span class="badge badge-termine">Terminé</span>{% endif %}</h3>
                 <p><strong>📅 Départ :</strong> {{ voyage.date_depart|date:"d M Y à H:i" }}</p>
                 <p><strong>📍 Ramassage :</strong> {{ voyage.lieu_ramassage|default:"Non précisé" }}</p>
                 <p><strong>🎟️ Places libres :</strong> {{ voyage.places_disponibles }} place(s)</p>
-                <p><strong>💰 Prix :</strong> {{ voyage.prix_par_place }} FCFA</p>
+                <p><strong>💰 Prix :</strong> {{ voyage.prix_par_place }} {{ voyage.get_currency_display }}</p>
                 {% if voyage.plaque_immatriculation or voyage.modele_voiture %}
                 <p><strong>🚗 Véhicule :</strong> {{ voyage.modele_voiture|default:"—" }} · Plaque {{ voyage.plaque_immatriculation|default:"—" }}</p>
                 <p><strong>🧳 Bagage accepté :</strong> {{ voyage.get_type_bagage_accepte_display }}</p>
                 {% endif %}
-                
+                {% if voyage.women_only %}<p><span class="badge badge-women">👩 Femmes uniquement</span></p>{% endif %}
                 <div class="card-actions">
                     {% if not voyage.est_termine %}
                     <form method="POST" action="{% url 'covoiturage:mark_voyage_termine' voyage.id %}" style="display:inline;">
@@ -171,7 +103,6 @@
         </div>
         {% endif %}
 
-        <!-- SECTION : MES DEMANDES DE TRAJET -->
         <h2 class="section-title" id="demandes">🙋‍♂️ Mes demandes de trajet (Passager)</h2>
         <div class="grid">
             {% for demande in demandes %}
@@ -179,7 +110,6 @@
                 <h3>{{ demande.ville_depart }} ➔ {{ demande.ville_arrivee }}</h3>
                 <p><strong>📅 Date souhaitée :</strong> {{ demande.date_voyage|date:"d M Y" }}</p>
                 <p><strong>🎟️ Places :</strong> {{ demande.places }} place(s)</p>
-                
                 <div class="card-actions">
                     <a href="{% url 'covoiturage:edit_demande' demande.id %}" class="btn-edit">Modifier</a>
                     <a href="{% url 'covoiturage:delete_demande' demande.id %}" class="btn-delete">Supprimer</a>
@@ -203,14 +133,12 @@
         </div>
         {% endif %}
 
-        <!-- SECTION : CORRESPONDANCES TROUVÉES -->
         <h2 class="section-title" id="correspondances">🤝 Matchs & Correspondances</h2>
         <div class="grid">
             {% if correspondances.object_list %}
                 {% for correspondance in correspondances %}
                 <div class="card" style="border-left: 6px solid var(--color-earth);">
                     <h3>Match trouvé ! 🎉</h3>
-
                     {% if correspondance.voyage.conducteur_id == request.user.id %}
                         <p>
                             <strong>👤 Passager :</strong>
@@ -218,7 +146,7 @@
                                 {{ correspondance.demande.passager.username }}
                             </a>
                             {% if correspondance.other_note_moyenne %}
-                                <span class="note-badge">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
+                                <span class="badge badge-note">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
                             {% endif %}
                         </p>
                         <p><strong>🛣️ Trajet :</strong> {{ correspondance.voyage.ville_depart }} ➔ {{ correspondance.voyage.ville_arrivee }}</p>
@@ -230,25 +158,22 @@
                                 {{ correspondance.voyage.conducteur.username }}
                             </a>
                             {% if correspondance.other_note_moyenne %}
-                                <span class="note-badge">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
+                                <span class="badge badge-note">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
                             {% endif %}
                         </p>
                         <p><strong>🛣️ Trajet :</strong> {{ correspondance.demande.ville_depart }} ➔ {{ correspondance.demande.ville_arrivee }}</p>
                     {% endif %}
-
                     {% if correspondance.is_validated and correspondance.other_phone %}
                         <p><strong>📞 Téléphone :</strong> {{ correspondance.other_phone }}</p>
                     {% endif %}
-
                     <p>
                         <strong>📌 Statut :</strong>
                         {% if correspondance.is_validated %}
-                            <span style="color: #2E7D32; font-weight: 800; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">Validé ✅</span>
+                            <span class="badge badge-validated" style="font-weight:800;">Validé ✅</span>
                         {% else %}
-                            <span style="color: #E65100; font-weight: 800; background: #FFF3E0; padding: 2px 8px; border-radius: 4px;">En attente ⏳</span>
+                            <span class="badge badge-pending" style="font-weight:800;">En attente ⏳</span>
                         {% endif %}
                     </p>
-
                     {% if not correspondance.is_validated %}
                     <div class="card-actions" style="flex-wrap: wrap; gap: 10px;">
                         {% if correspondance.voyage.conducteur_id == request.user.id %}
@@ -291,8 +216,4 @@
             {% endif %}
         </div>
         {% endif %}
-
-    </div>
-
-</body>
-</html>
+{% endblock %}

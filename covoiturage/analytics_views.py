@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.db.models import Count, Avg, Sum, F, Q, ExpressionWrapper, FloatField, Min, Max
 from django.db.models.functions import TruncMonth, TruncWeek, ExtractHour, ExtractWeekDay
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
 from django.utils import timezone
 from datetime import timedelta
 from .models import Voyage, Demande, Correspondance, Avis, Profile, User
@@ -12,6 +13,106 @@ import json
 
 @login_required
 def analytics_dashboard(request):
+    """Route to personal analytics for regular users, platform analytics for staff."""
+    if request.user.is_staff:
+        return _admin_analytics(request)
+    return _user_analytics(request)
+
+
+def _user_analytics(request):
+    """Personal analytics dashboard for a regular user."""
+    user = request.user
+    now = timezone.now()
+
+    # My trips as driver
+    my_voyages = Voyage.objects.filter(conducteur=user)
+    total_voyages = my_voyages.count()
+    completed_voyages = my_voyages.filter(est_termine=True).count()
+    active_voyages = my_voyages.filter(est_termine=False, date_depart__gte=now).count()
+
+    # My requests as passenger
+    my_demandes = Demande.objects.filter(passager=user)
+    total_demandes = my_demandes.count()
+
+    # My matches
+    my_matches = Correspondance.objects.filter(
+        Q(voyage__conducteur=user) | Q(demande__passager=user)
+    )
+    total_matches = my_matches.count()
+    validated_matches = my_matches.filter(
+        is_validated=True, refus_conducteur=False, refus_passager=False
+    ).count()
+    match_rate = (validated_matches / total_matches * 100) if total_matches > 0 else 0
+
+    # Earnings as driver
+    total_earnings = my_voyages.filter(est_termine=True).aggregate(
+        total=Sum('prix_par_place')
+    )['total'] or 0
+
+    # Ratings received
+    ratings_received = Avis.objects.filter(utilisateur_note=user)
+    avg_rating = ratings_received.aggregate(avg=Avg('note'))['avg'] or 0
+    total_reviews = ratings_received.count()
+    rating_dist = ratings_received.values('note').annotate(count=Count('id')).order_by('note')
+    rating_labels = [f"{r['note']} ⭐" for r in rating_dist]
+    rating_data = [r['count'] for r in rating_dist]
+
+    # Ratings given
+    ratings_given = Avis.objects.filter(auteur=user).count()
+
+    # My trip history by month (last 6 months)
+    six_months_ago = now - timedelta(days=180)
+    monthly_trips = my_voyages.filter(created_at__gte=six_months_ago).annotate(
+        month=TruncMonth('created_at')
+    ).values('month').annotate(count=Count('id')).order_by('month')
+    monthly_labels = [t['month'].strftime('%b %Y') for t in monthly_trips]
+    monthly_data = [t['count'] for t in monthly_trips]
+
+    # My popular routes
+    my_routes = my_voyages.values('ville_depart', 'ville_arrivee').annotate(
+        trip_count=Count('id')
+    ).order_by('-trip_count')[:5]
+    routes_labels = [f"{r['ville_depart']} → {r['ville_arrivee']}" for r in my_routes]
+    routes_data = [r['trip_count'] for r in my_routes]
+
+    # Trips as passenger (completed)
+    completed_as_passenger = Correspondance.objects.filter(
+        demande__passager=user, is_validated=True,
+        refus_conducteur=False, refus_passager=False,
+        voyage__est_termine=True
+    ).count()
+
+    # Recent activity
+    recent_voyages = my_voyages.order_by('-created_at')[:5]
+    recent_reviews = ratings_received.select_related('auteur', 'voyage').order_by('-created_at')[:5]
+
+    context = {
+        'total_voyages': total_voyages,
+        'completed_voyages': completed_voyages,
+        'active_voyages': active_voyages,
+        'total_demandes': total_demandes,
+        'total_matches': total_matches,
+        'validated_matches': validated_matches,
+        'match_rate': round(match_rate, 1),
+        'total_earnings': total_earnings,
+        'completed_as_passenger': completed_as_passenger,
+        'avg_rating': round(avg_rating, 1),
+        'total_reviews': total_reviews,
+        'ratings_given': ratings_given,
+        'rating_labels': json.dumps(rating_labels),
+        'rating_data': json.dumps(rating_data),
+        'monthly_labels': json.dumps(monthly_labels),
+        'monthly_data': json.dumps(monthly_data),
+        'routes_labels': json.dumps(routes_labels),
+        'routes_data': json.dumps(routes_data),
+        'recent_voyages': recent_voyages,
+        'recent_reviews': recent_reviews,
+    }
+    return render(request, 'analytics/user_dashboard.html', context)
+
+
+@staff_member_required
+def _admin_analytics(request):
     """Main analytics dashboard with comprehensive statistics."""
     
     now = timezone.now()
@@ -278,12 +379,10 @@ def analytics_dashboard(request):
     return render(request, 'analytics/dashboard.html', context)
 
 
-@login_required
-def analytics_api(request):
+@staff_member_required
+def analytics_api(request, data_type='overview'):
     """API endpoint for real-time analytics updates."""
     from django.http import JsonResponse
-    
-    data_type = request.GET.get('type', 'overview')
     
     if data_type == 'overview':
         # Real-time overview stats

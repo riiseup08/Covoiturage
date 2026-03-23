@@ -1,6 +1,6 @@
 ﻿{% extends "base.html" %}
 
-{% block title %}Inscription - Covoit.Africa{% endblock %}
+{% block title %}Inscription rapide - Covoit.Africa{% endblock %}
 
 {% block body_attrs %}style="margin: 0; padding: 0;"{% endblock %}
 
@@ -12,17 +12,14 @@
     .split-left .overlay h2 { font-size: 36px; font-weight: 900; margin-bottom: 15px; }
     .split-left .overlay p { font-size: 18px; opacity: 0.9; line-height: 1.6; }
     .split-right { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; background: var(--color-bg); }
-    .register-form { width: 100%; max-width: 440px; }
+    .register-form { width: 100%; max-width: 420px; }
     .register-form h1 { margin-bottom: 8px; }
     .register-form .subtitle { color: #888; font-size: 15px; margin-bottom: 25px; }
+    .advantages { background: #FFF8E1; border-radius: 8px; padding: 15px 20px; margin-bottom: 25px; }
+    .advantages li { font-size: 14px; margin-bottom: 6px; color: #555; list-style: none; }
+    .advantages li::before { content: '✓ '; color: var(--color-earth); font-weight: 700; }
     .login-link { text-align: center; margin-top: 20px; font-size: 14px; color: #888; }
     .login-link a { color: var(--color-earth); font-weight: 600; text-decoration: none; }
-    .register-form p { margin-bottom: 15px; }
-    .register-form p label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
-    .register-form p input { width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px; font-family: 'Outfit'; }
-    .register-form p input:focus { outline: none; border-color: var(--color-earth); }
-    .register-form .helptext { font-size: 12px; color: #999; margin-top: 4px; }
-    .register-form .helptext ul { padding-left: 16px; }
     @media (max-width: 768px) {
         .split-left { display: none; }
         .split-right { padding: 30px 20px; }
@@ -35,24 +32,39 @@
         <div class="split-left">
             <div class="overlay">
                 <h2>Covoit.<span style="color: var(--color-sun);">Africa</span></h2>
-                <p>Rejoignez le mouvement du covoiturage en Afrique. Créez votre compte et commencez à voyager.</p>
+                <p>1 minute, 0 mot de passe.<br>Inscrivez-vous par SMS et trouvez des trajets partout en Afrique.</p>
             </div>
         </div>
         <div class="split-right">
             <div class="register-form">
-                <h1>📝 Créer un compte</h1>
-                <p class="subtitle">Inscription avec mot de passe</p>
+                <h1>✨ Inscription rapide</h1>
+                <p class="subtitle">Créez votre compte en quelques secondes</p>
                 {% if form.errors %}
                 <div class="error-box">
                     <ul>{% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}</ul>
                 </div>
                 {% endif %}
+                <div class="advantages">
+                    <ul>
+                        <li>Inscription par SMS uniquement</li>
+                        <li>Pas de mot de passe à retenir</li>
+                        <li>Accédez à des milliers de trajets</li>
+                    </ul>
+                </div>
                 <form method="POST">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-submit" style="width: 100%;">Créer mon compte</button>
+                    <div class="form-group">
+                        <label>Nom complet</label>
+                        {{ form.full_name }}
+                    </div>
+                    <div class="form-group">
+                        <label>Numéro de téléphone</label>
+                        {{ form.phone }}
+                        <p style="font-size: 13px; color: #888; margin-top: 6px;">Format : +237 6XX XXX XXX</p>
+                    </div>
+                    <button type="submit" class="btn btn-submit" style="width: 100%;">Recevoir le code SMS</button>
                 </form>
-                <p class="login-link">Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a> · <a href="{% url 'covoiturage:phone_register' %}">Inscription par téléphone</a></p>
+                <p class="login-link">Déjà un compte ? <a href="{% url 'covoiturage:phone_login' %}">Se connecter</a></p>
             </div>
         </div>
     </div>

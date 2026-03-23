@@ -1,147 +1,87 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications - Covoit.Africa</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; }
-        .container { max-width: 800px; margin: 0 auto; }
+﻿{% extends "base.html" %}
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; background: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
-        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
-        .nav-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; transition: 0.3s ease; font-size: 15px; }
-        .nav-links a:hover { background-color: #333; transform: translateY(-2px); }
+{% block title %}Notifications - Covoit.Africa{% endblock %}
 
-        .badge-count { background: #D32F2F; color: white; font-size: 14px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
-        .toolbar { display: flex; justify-content: flex-end; margin-bottom: 20px; }
-        .btn-mark-all { background: #F1EFE9; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Outfit'; font-size: 14px; color: var(--color-night); transition: 0.3s; }
-        .btn-mark-all:hover { background: #E2DFD6; }
+{% block extra_css %}
+<style>
+    :root { --container-width: 800px; }
+    .notif-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
+    .notif-header h1 .count { background: #D32F2F; color: white; font-size: 14px; padding: 3px 10px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
+    .notif-item { display: flex; gap: 15px; padding: 18px; background: white; border-radius: 10px; margin-bottom: 10px; border: 1px solid #F1EFE9; transition: 0.2s; }
+    .notif-item.unread { border-left: 4px solid var(--color-earth); background: #FFF9F5; }
+    .notif-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .notif-icon.match { background: #E3F2FD; }
+    .notif-icon.validated { background: #E8F5E9; }
+    .notif-icon.refused { background: #FDECEA; }
+    .notif-icon.review { background: #FFF8E1; }
+    .notif-icon.reminder { background: #F3E5F5; }
+    .notif-icon.completed { background: #E0F7FA; }
+    .notif-icon.message { background: #EDE7F6; }
+    .notif-body { flex: 1; }
+    .notif-title { font-weight: 700; font-size: 15px; color: var(--color-night); }
+    .notif-time { font-size: 13px; color: #999; margin-left: 8px; }
+    .notif-msg { font-size: 14px; color: #555; margin-top: 4px; }
+    .notif-actions { margin-top: 6px; }
+    .notif-actions a { font-size: 13px; color: var(--color-earth); font-weight: 600; text-decoration: none; margin-right: 12px; }
+    .notif-actions a:hover { text-decoration: underline; }
+    .btn-mark-all { padding: 10px 20px; background: #F1EFE9; color: var(--color-night); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Outfit'; font-size: 14px; text-decoration: none; }
+    .btn-mark-all:hover { background: #E2DFD6; }
+</style>
+{% endblock %}
 
-        .notif-list { display: flex; flex-direction: column; gap: 12px; }
-        .notif-item { display: flex; gap: 16px; align-items: flex-start; background: white; padding: 20px 24px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); border: 1px solid #F1EFE9; transition: transform 0.2s; }
-        .notif-item:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
-        .notif-item.unread { border-left: 4px solid var(--color-earth); background: #FFF8F5; }
-
-        .notif-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-        .icon-match { background: #E8F5E9; }
-        .icon-validated { background: #E3F2FD; }
-        .icon-refused { background: #FDECEA; }
-        .icon-review { background: #FFF8E1; }
-        .icon-reminder { background: #F3E5F5; }
-        .icon-completed { background: #E0F2F1; }
-        .icon-message { background: #F1EFE9; }
-
-        .notif-body { flex: 1; min-width: 0; }
-        .notif-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
-        .notif-title { font-size: 16px; font-weight: 700; color: var(--color-night); }
-        .notif-item.unread .notif-title { color: var(--color-earth); }
-        .notif-time { font-size: 13px; color: #999; white-space: nowrap; }
-        .notif-message { font-size: 14px; color: #666; line-height: 1.5; }
-        .notif-actions { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
-        .notif-actions a { text-decoration: none; font-size: 13px; font-weight: 600; color: var(--color-earth); transition: 0.2s; }
-        .notif-actions a:hover { text-decoration: underline; }
-        .notif-actions a.secondary { color: #888; }
-
-        .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 12px; color: #888; border: 2px dashed #EBE5D9; font-size: 16px; }
-        .empty-state .big-icon { font-size: 48px; margin-bottom: 15px; }
-
-        .pagination { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 25px; }
-        .pagination a, .pagination span { padding: 8px 14px; border-radius: 8px; text-decoration: none; background: #F1EFE9; color: var(--color-night); font-weight: 600; }
-        .pagination a:hover { background: var(--color-earth); color: white; }
-        .pagination .current { background: var(--color-earth); color: white; }
-
-        @media (max-width: 600px) {
-            .header { flex-direction: column; align-items: flex-start; }
-            .notif-item { flex-direction: column; gap: 10px; }
-            .notif-top { flex-direction: column; align-items: flex-start; gap: 4px; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-
-        {% if messages %}
-        <div style="margin-bottom: 20px;">
-            {% for message in messages %}
-            <div style="padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: 600; background-color: #E8F5E9; color: #2E7D32; border-left: 4px solid #2E7D32;">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <div class="header">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <h1>🔔 Notifications</h1>
+{% block content %}
+        <div class="notif-header">
+            <h1>🔔 Notifications{% if unread_count > 0 %}<span class="count">{{ unread_count }}</span>{% endif %}</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
                 {% if unread_count > 0 %}
-                <span class="badge-count">{{ unread_count }} non lue{{ unread_count|pluralize:"s" }}</span>
+                <form method="POST" action="{% url 'covoiturage:notifications_mark_all_read' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-mark-all">Tout marquer comme lu</button>
+                </form>
                 {% endif %}
-            </div>
-            <div class="nav-links">
-                <a href="{% url 'covoiturage:dashboard' %}">📋 Tableau de bord</a>
+                <a href="{% url 'covoiturage:dashboard' %}" class="btn-mark-all">← Tableau de bord</a>
             </div>
         </div>
 
-        {% if notifications.object_list %}
-        <div class="toolbar">
-            <form method="post" action="{% url 'covoiturage:notifications_mark_all_read' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn-mark-all">✓ Tout marquer comme lu</button>
-            </form>
-        </div>
-        {% endif %}
-
-        <div class="notif-list">
-            {% for notification in notifications %}
-            <div class="notif-item {% if not notification.is_read %}unread{% endif %}">
-                <div class="notif-icon {% if notification.notification_type == 'match' %}icon-match{% elif notification.notification_type == 'match_validated' %}icon-validated{% elif notification.notification_type == 'match_refused' %}icon-refused{% elif notification.notification_type == 'review' %}icon-review{% elif notification.notification_type == 'trip_reminder' %}icon-reminder{% elif notification.notification_type == 'trip_completed' %}icon-completed{% else %}icon-message{% endif %}">
-                    {{ notification.icon }}
-                </div>
-                <div class="notif-body">
-                    <div class="notif-top">
-                        <span class="notif-title">{{ notification.title }}</span>
-                        <span class="notif-time">{{ notification.created_at|timesince }} ago</span>
-                    </div>
-                    <p class="notif-message">{{ notification.message }}</p>
-                    <div class="notif-actions">
-                        {% if not notification.is_read %}
-                        <a href="{% url 'covoiturage:notifications_mark_read' notification.id %}">Marquer comme lu</a>
-                        {% endif %}
-                        {% if notification.related_voyage %}
-                        <a href="{% url 'covoiturage:dashboard' %}" class="secondary">Voir le trajet →</a>
-                        {% endif %}
-                        {% if notification.related_avis %}
-                        <a href="{% url 'covoiturage:avis_list' %}" class="secondary">Voir l'avis →</a>
-                        {% endif %}
-                    </div>
+        {% for notif in notifications %}
+        <div class="notif-item {% if not notif.is_read %}unread{% endif %}">
+            <div class="notif-icon {{ notif.notification_type }}">{{ notif.icon }}</div>
+            <div class="notif-body">
+                <span class="notif-title">{{ notif.title }}</span>
+                <span class="notif-time">il y a {{ notif.created_at|timesince }}</span>
+                <p class="notif-msg">{{ notif.message }}</p>
+                <div class="notif-actions">
+                    {% if notif.related_voyage %}
+                    <a href="{% url 'covoiturage:dashboard' %}#trajets">Voir le trajet</a>
+                    {% endif %}
+                    {% if notif.related_avis %}
+                    <a href="{% url 'covoiturage:public_profile' request.user.username %}">Voir mes avis</a>
+                    {% endif %}
+                    {% if not notif.is_read %}
+                    <form method="POST" action="{% url 'covoiturage:notifications_mark_read' notif.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" style="background: none; border: none; color: var(--color-earth); font-weight: 600; font-size: 13px; cursor: pointer; font-family: 'Outfit'; padding: 0;">Marquer comme lu</button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
-            {% empty %}
-            <div class="empty-state">
-                <div class="big-icon">🔕</div>
-                <p>Aucune notification pour le moment.</p>
-                <p style="margin-top: 8px; font-size: 14px;">Vos nouvelles notifications apparaîtront ici.</p>
-            </div>
-            {% endfor %}
         </div>
+        {% empty %}
+        <div class="empty-state">
+            <p style="font-size: 40px; margin-bottom: 10px;">🔕</p>
+            <p>Aucune notification pour le moment.</p>
+        </div>
+        {% endfor %}
 
-        {% if notifications.has_other_pages %}
+        {% if notifications.paginator.num_pages > 1 %}
         <div class="pagination">
             {% if notifications.has_previous %}
-            <a href="?page={{ notifications.previous_page_number }}">‹ Précédent</a>
+            <a href="?page={{ notifications.previous_page_number }}">‹ Préc.</a>
             {% endif %}
-            <span class="current">Page {{ notifications.number }} / {{ notifications.paginator.num_pages }}</span>
+            <span class="current">Page {{ notifications.number }}/{{ notifications.paginator.num_pages }}</span>
             {% if notifications.has_next %}
-            <a href="?page={{ notifications.next_page_number }}">Suivant ›</a>
+            <a href="?page={{ notifications.next_page_number }}">Suiv. ›</a>
             {% endif %}
         </div>
         {% endif %}
-
-    </div>
-</body>
-</html>
+{% endblock %}

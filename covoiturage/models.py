@@ -1,7 +1,7 @@
+import secrets
+
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.utils import timezone
 
 
@@ -32,6 +32,31 @@ class Profile(models.Model):
     # Phone verification
     phone_verified = models.BooleanField(default=False)
 
+    # WhatsApp & Mobile Money (essential for Africa)
+    whatsapp_number = models.CharField(max_length=20, blank=True, default='', help_text="Numéro WhatsApp (si différent)")
+    mobile_money_number = models.CharField(max_length=20, blank=True, default='', help_text="Numéro Mobile Money (MTN, Orange, etc.)")
+    MOBILE_MONEY_PROVIDER_CHOICES = [
+        ('mtn', 'MTN Mobile Money'),
+        ('orange', 'Orange Money'),
+        ('moov', 'Moov Money'),
+        ('airtel', 'Airtel Money'),
+        ('wave', 'Wave'),
+        ('other', 'Autre'),
+    ]
+    mobile_money_provider = models.CharField(max_length=10, choices=MOBILE_MONEY_PROVIDER_CHOICES, blank=True, default='')
+    preferred_language = models.CharField(max_length=5, default='fr', choices=[('fr', 'Français'), ('en', 'English')])
+
+    # Women-safety & emergency contacts
+    GENDER_CHOICES = [
+        ('male', 'Homme'),
+        ('female', 'Femme'),
+        ('other', 'Autre'),
+        ('prefer_not', 'Préfère ne pas dire'),
+    ]
+    gender = models.CharField(max_length=12, choices=GENDER_CHOICES, blank=True, default='')
+    emergency_contact_name = models.CharField(max_length=100, blank=True, default='', help_text="Nom du contact d'urgence")
+    emergency_contact_phone = models.CharField(max_length=20, blank=True, default='', help_text="Téléphone du contact d'urgence")
+
     # Status & scoring
     verification_status = models.CharField(max_length=20, default='not_started')
     verification_notes = models.TextField(blank=True, default='')
@@ -43,18 +68,8 @@ class Profile(models.Model):
     def __str__(self):
         return f"Profil de {self.user.username}"
 
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    try:
-        instance.profile.save()
-    except (Profile.DoesNotExist, AttributeError):
-        # Si le profil n'existe pas encore (ex: mise à jour last_login), le créer pour éviter une erreur 500.
-        Profile.objects.get_or_create(user=instance)
+# NOTE: profile signals are in signals.py (loaded via apps.py ready())
+# Do NOT duplicate them here.
 
 class Voyage(models.Model):
     conducteur = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -65,6 +80,18 @@ class Voyage(models.Model):
     date_arrivee = models.DateTimeField()
     places_disponibles = models.PositiveIntegerField(default=1)
     prix_par_place = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    CURRENCY_CHOICES = [
+        ('XAF', 'FCFA (Afrique Centrale)'),
+        ('XOF', 'FCFA (Afrique de l\'Ouest)'),
+        ('NGN', 'Naira (Nigeria)'),
+        ('GHS', 'Cedi (Ghana)'),
+        ('KES', 'Shilling (Kenya)'),
+        ('ZAR', 'Rand (Afrique du Sud)'),
+        ('MAD', 'Dirham (Maroc)'),
+    ]
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='XAF')
+    accept_mobile_money = models.BooleanField(default=True, help_text="Accepte le paiement par Mobile Money")
+    accept_cash = models.BooleanField(default=True, help_text="Accepte le paiement en espèces")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -102,6 +129,10 @@ class Voyage(models.Model):
     est_termine = models.BooleanField(
         default=False,
         help_text="Coché quand le trajet est terminé (masqué des recherches)"
+    )
+    women_only = models.BooleanField(
+        default=False,
+        help_text="Trajet réservé aux femmes"
     )
 
     def __str__(self):
@@ -209,3 +240,51 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender.username}: {self.content[:50]}"
+
+
+class PhoneOTP(models.Model):
+    """OTP codes for phone-based authentication."""
+    phone = models.CharField(max_length=20, db_index=True)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['phone', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"OTP pour {self.phone}"
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.created_at + timezone.timedelta(minutes=10)
+
+    @property
+    def is_valid(self):
+        return not self.is_used and not self.is_expired and self.attempts < 5
+
+    @classmethod
+    def generate(cls, phone):
+        """Create a new 6-digit OTP for the given phone number."""
+        # Invalidate previous unused OTPs for this phone
+        cls.objects.filter(phone=phone, is_used=False).update(is_used=True)
+        code = f"{secrets.randbelow(900000) + 100000}"
+        return cls.objects.create(phone=phone, code=code)
+
+    @classmethod
+    def verify(cls, phone, code):
+        """Verify an OTP. Returns True if valid, False otherwise."""
+        otp = cls.objects.filter(phone=phone, is_used=False).order_by('-created_at').first()
+        if not otp or not otp.is_valid:
+            return False
+        otp.attempts += 1
+        if otp.code == code:
+            otp.is_used = True
+            otp.save(update_fields=['is_used', 'attempts'])
+            return True
+        otp.save(update_fields=['attempts'])
+        return False

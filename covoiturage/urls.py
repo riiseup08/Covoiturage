@@ -9,6 +9,12 @@ urlpatterns = [
     path('search/', views.search_trajets, name='search_trajets'),
     path('accounts/register/', views.register_view, name='register'),
     
+    # Phone OTP authentication
+    path('accounts/phone/login/', views.phone_login_view, name='phone_login'),
+    path('accounts/phone/register/', views.phone_register_view, name='phone_register'),
+    path('accounts/phone/verify/', views.phone_verify_otp_view, name='phone_verify_otp'),
+    path('accounts/phone/resend/', views.phone_resend_otp_view, name='phone_resend_otp'),
+    
     path('profile/', views.profile_view, name='profile'),
     path('profile/<str:username>/', views.public_profile_view, name='public_profile'),
     
