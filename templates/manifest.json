@@ -1,0 +1,17 @@
+{
+  "name": "Covoit.Africa",
+  "short_name": "Covoit",
+  "description": "L'Afrique en mouvement. Covoiturage simple, sûr et solidaire.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF6ED",
+  "theme_color": "#D95D39",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3082/3082383.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,9 +1,12 @@
 from django.urls import path
+from django.views.generic import TemplateView
 from . import views
 
 app_name = 'covoiturage'
 
 urlpatterns = [
+    path('manifest.json', TemplateView.as_view(template_name='manifest.json', content_type='application/json'), name='manifest'),
+    path('sw.js', TemplateView.as_view(template_name='sw.js', content_type='application/javascript'), name='service_worker'),
     path('', views.landing_view, name='landing'),
     path('dashboard/', views.home_view, name='dashboard'),
     path('search/', views.search_trajets, name='search_trajets'),
