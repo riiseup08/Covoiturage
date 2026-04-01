@@ -4,335 +4,713 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de bord - Covoit.Africa</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { --color-earth: #D95D39; --color-night: #1A1A1A; --color-bg: #FAF6ED; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        body { background-color: var(--color-bg); color: var(--color-night); padding: 40px 20px; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        
-        /* En-tête */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; flex-wrap: wrap; gap: 20px; background: white; padding: 20px 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.02); }
-        h1 { font-size: 28px; font-weight: 800; color: var(--color-night); }
-        .nav-links { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .nav-links a { text-decoration: none; color: white; background-color: var(--color-night); padding: 12px 20px; border-radius: 8px; font-weight: 600; transition: 0.3s ease; font-size: 15px; }
-        .nav-links a:hover { background-color: #333; transform: translateY(-2px); }
-        .nav-links a.btn-primary { background-color: var(--color-earth); box-shadow: 0 4px 10px rgba(217, 93, 57, 0.2); }
-        .nav-links a.btn-primary:hover { background-color: #A64426; box-shadow: 0 6px 15px rgba(217, 93, 57, 0.3); }
-        .btn-logout { background: #FDECEA; border: none; color: #D32F2F; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; font-family: 'Outfit'; font-size: 15px; }
-        .btn-logout:hover { background: #FAD1CD; transform: translateY(-2px); }
+        /* ===== DESIGN TOKENS ===== */
+        :root {
+            --earth:       #D95D39;
+            --earth-dark:  #A64426;
+            --earth-light: #F0806A;
+            --sun:         #F2A65A;
+            --sun-light:   #FDEBD0;
+            --night:       #1A1A1A;
+            --night-soft:  #2C2C2C;
+            --bg:          #FAF6ED;
+            --bg-alt:      #F3EDE0;
+            --white:       #FFFFFF;
+            --text-muted:  #666666;
+            --text-light:  #999999;
+            --border:      rgba(0,0,0,0.08);
+            --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md:   0 8px 24px rgba(0,0,0,0.10);
+            --shadow-lg:   0 20px 50px rgba(0,0,0,0.14);
+            --radius-sm:   6px;
+            --radius-md:   14px;
+            --radius-lg:   24px;
+            --transition:  0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-        /* Titres de sections */
-        .section-title { font-size: 24px; font-weight: 700; margin-bottom: 20px; margin-top: 40px; border-bottom: 2px solid #EBE5D9; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
-        
-        /* Grille des cartes */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; margin-bottom: 40px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #F1EFE9; transition: transform 0.3s ease; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08); }
-        .card h3 { font-size: 20px; margin-bottom: 15px; color: var(--color-earth); font-weight: 700; }
-        .card p { margin-bottom: 10px; font-size: 15px; color: #555; display: flex; align-items: flex-start; gap: 8px; }
-        .card strong { color: var(--color-night); min-width: 120px; }
-        
-        /* Boutons d'actions dans les cartes */
-        .card-actions { margin-top: 25px; display: flex; gap: 15px; }
-        .btn-edit, .btn-delete { flex: 1; text-align: center; padding: 12px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; transition: 0.3s; }
-        .btn-edit { background-color: #F1EFE9; color: var(--color-night); }
-        .btn-edit:hover { background-color: #E2DFD6; }
-        .btn-delete { background-color: #FFF5F5; color: #D32F2F; border: 1px solid #FFEBEB; }
-        .btn-delete:hover { background-color: #FDECEA; }
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0; padding: 0; box-sizing: border-box;
+        }
 
-        /* Messages de notification */
-        .messages { margin-bottom: 20px; }
-        .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 10px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-        .alert-success { background-color: #E8F5E9; color: #2E7D32; border-left: 4px solid #2E7D32; }
-        .alert-error { background-color: #FDECEA; color: #D32F2F; border-left: 4px solid #D32F2F; }
-        .alert-info { background-color: #E3F2FD; color: #1565C0; border-left: 4px solid #1565C0; }
-        
-        .empty-state { text-align: center; padding: 50px 20px; background: white; border-radius: 12px; color: #888; border: 2px dashed #EBE5D9; grid-column: 1 / -1; font-size: 16px; }
-        .badge-termine { background: #E0E0E0; color: #616161; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
-        .pagination { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-        .pagination a, .pagination span { padding: 8px 14px; border-radius: 8px; text-decoration: none; background: #F1EFE9; color: var(--color-night); font-weight: 600; }
-        .pagination a:hover { background: var(--color-earth); color: white; }
-        .pagination .current { background: var(--color-earth); color: white; }
-        .btn-refuse { background: #FFF5F5; color: #C62828; border: 1px solid #FFCDD2; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; font-family: 'Outfit'; }
-        .btn-refuse:hover { background: #FDECEA; }
+        html { scroll-behavior: smooth; }
 
-        /* Bloc stats */
-        .stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
-        .stat-box { flex: 1; min-width: 140px; background: white; padding: 20px 24px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.04); border: 1px solid #F1EFE9; text-align: center; }
-        .stat-box .num { font-size: 32px; font-weight: 800; color: var(--color-earth); line-height: 1.2; }
-        .stat-box .label { font-size: 14px; color: #666; margin-top: 4px; }
-        .note-badge { display: inline-block; background: #FFF8E1; color: #F57C00; padding: 2px 8px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-left: 6px; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--night);
+            overflow-x: hidden;
+            line-height: 1.6;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 5%;
+        }
+
+        /* ===== HEADER / TOP NAV ===== */
+        .dashboard-header {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 24px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-top {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--night);
+            margin-bottom: 8px;
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            background: #E3F2FD;
+            color: #1976D2;
+        }
+
+        .status-badge.verified {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .status-badge.warning {
+            background: #FFEBEE;
+            color: #C62828;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .notification-bell {
+            position: relative;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+        }
+
+        .notification-bell:hover {
+            background: var(--bg-alt);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #D32F2F;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-logout {
+            background: #FDECEA;
+            border: none;
+            color: #D32F2F;
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: 'Outfit';
+            font-size: 14px;
+        }
+
+        .btn-logout:hover {
+            background: #FAD1CD;
+            transform: translateY(-1px);
+        }
+
+        /* ===== QUICK ACTIONS BAR ===== */
+        .quick-actions {
+            background: var(--white);
+            padding: 20px 5%;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .quick-actions a, .quick-actions button {
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: 'Outfit';
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-actions a.btn-primary {
+            background: var(--earth);
+            color: white;
+            box-shadow: 0 4px 12px rgba(217, 93, 57, 0.2);
+        }
+
+        .quick-actions a.btn-primary:hover {
+            background: var(--earth-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(217, 93, 57, 0.3);
+        }
+
+        .quick-actions a.btn-secondary {
+            background: var(--bg);
+            color: var(--night);
+            border: 1px solid var(--border);
+        }
+
+        .quick-actions a.btn-secondary:hover {
+            background: var(--bg-alt);
+            border-color: var(--earth);
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .dashboard-content {
+            padding: 40px 5%;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 48px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            padding: 28px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            transition: all var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-card .number {
+            font-size: 40px;
+            font-weight: 900;
+            color: var(--earth);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .label {
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* Two-Column Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 32px;
+            margin-bottom: 48px;
+        }
+
+        .section {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--night);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 2px solid var(--bg-alt);
+            padding-bottom: 16px;
+        }
+
+        /* Cards Grid inside Sections */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            transition: all var(--transition);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--earth-light);
+        }
+
+        .card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--earth);
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .btn-small {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: center;
+        }
+
+        .btn-edit {
+            background: var(--bg-alt);
+            color: var(--night);
+        }
+
+        .btn-edit:hover {
+            background: #E2DFD6;
+        }
+
+        .btn-delete {
+            background: #FFF5F5;
+            color: #D32F2F;
+            border: 1px solid #FFCDD2;
+        }
+
+        .btn-delete:hover {
+            background: #FDECEA;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* Messages */
+        .messages {
+            margin-bottom: 24px;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #E8F5E9;
+            color: #2E7D32;
+            border-left-color: #2E7D32;
+        }
+
+        .alert-error {
+            background: #FDECEA;
+            color: #D32F2F;
+            border-left-color: #D32F2F;
+        }
+
+        .alert-info {
+            background: #E3F2FD;
+            color: #1565C0;
+            border-left-color: #1565C0;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        .pagination a, .pagination span {
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            background: var(--bg);
+            color: var(--night);
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .pagination a:hover {
+            background: var(--earth);
+            color: white;
+        }
+
+        .pagination .current {
+            background: var(--earth);
+            color: white;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
 
         @media (max-width: 768px) {
-            .header { flex-direction: column; align-items: flex-start; }
-            .nav-links { width: 100%; justify-content: space-between; }
-            .nav-links a, .btn-logout { flex: 1; text-align: center; padding: 10px; font-size: 14px; }
+            .dashboard-header {
+                padding: 16px 5%;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .quick-actions {
+                flex-direction: column;
+            }
+
+            .quick-actions a, .quick-actions button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        
-        <!-- Messages de succès/erreur -->
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- En-tête -->
-        <div class="header">
-            <div style="display: flex; flex-direction: column; gap: 5px;">
+    <!-- ===== HEADER ===== -->
+    <div class="dashboard-header">
+        <div class="header-top">
+            <div class="header-left">
                 <h1>👋 Salut, {{ request.user.username }}</h1>
-                
                 {% if request.user.profile.is_driver %}
                     {% if request.user.profile.driver_license_verified %}
-                        <!-- Driver is verified: Show Wallet -->
-                        <div style="display: flex; align-items: center; gap: 10px; background: #FFF8E1; padding: 8px 15px; border-radius: 8px; border: 1px solid #FFECB3;">
-                            <span style="font-size: 14px; font-weight: 700; color: #F57C00;">Crédit : {{ request.user.wallet.balance }} FCFA</span>
-                            <a href="#" onclick="alert('Redirection vers Monetbil... (Simulation)'); return false;" style="background: #F57C00; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 800; text-decoration: none;">Recharger</a>
+                        <div class="header-status">
+                            <span class="status-badge verified">✓ Conducteur vérifié</span>
                         </div>
                     {% elif request.user.profile.driver_license_photo %}
-                        <!-- License uploaded but not yet verified -->
-                        <div style="background: #E3F2FD; border: 1px solid #BBDEFB; padding: 8px 15px; border-radius: 8px; color: #1976D2; font-size: 13px; font-weight: 600;">
-                            ⏳ Votre permis est en cours de vérification par notre équipe.
+                        <div class="header-status">
+                            <span class="status-badge">⏳ Vérification en cours</span>
                         </div>
                     {% else %}
-                        <!-- Marked as driver but no license uploaded -->
-                        <div style="background: #FFEBEE; border: 1px solid #FFCDD2; padding: 8px 15px; border-radius: 8px; color: #C62828; font-size: 13px; font-weight: 600;">
-                            ⚠️ Veuillez télécharger votre permis dans votre profil pour être activé.
+                        <div class="header-status">
+                            <span class="status-badge warning">⚠️ Permis requis</span>
                         </div>
                     {% endif %}
                 {% endif %}
             </div>
-            <div class="nav-links">
-                <a href="{% url 'covoiturage:notifications_list' %}" class="notification-bell" style="position: relative; background-color: #F1EFE9; color: var(--color-night);">
+            <div class="header-right">
+                <a href="{% url 'covoiturage:notifications_list' %}" class="notification-bell">
                     🔔
                     {% if unread_count > 0 %}
-                    <span style="position: absolute; top: -5px; right: -5px; background: #D32F2F; color: white; font-size: 11px; font-weight: bold; min-width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">{{ unread_count }}</span>
+                        <span class="notification-badge">{{ unread_count }}</span>
                     {% endif %}
                 </a>
-                <a href="{% url 'covoiturage:add_voyage' %}" class="btn-primary">🚗 Publier un trajet</a>
-                <a href="{% url 'covoiturage:search_trajets' %}">🔍 Voir les trajets disponibles</a>
-                <a href="{% url 'covoiturage:add_demande' %}">🙋‍♂️ Publier une demande de trajet</a>
-                <a href="{% url 'covoiturage:profile' %}">👤 Mon Profil</a>
-                <a href="{% url 'covoiturage:avis_list' %}">⭐ Laisser un avis</a>
-                <a href="/analytics/dashboard/">📊 Analytics</a>
-                
-                <!-- Déconnexion -->
-                <form action="{% url 'logout' %}" method="post" style="display:inline; margin:0; padding:0;">
+                <a href="{% url 'covoiturage:profile' %}" style="padding: 10px 16px; background: var(--bg); border-radius: var(--radius-sm); text-decoration: none; color: var(--night); font-weight: 600; transition: all var(--transition);">👤</a>
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit" class="btn-logout">Déconnexion</button>
                 </form>
             </div>
         </div>
+    </div>
 
-        <!-- Stats rapides -->
-        <div class="stats-row">
-            <div class="stat-box">
-                <div class="num">{{ stats.total_voyages }}</div>
-                <div class="label">Trajets proposés</div>
-            </div>
-            <div class="stat-box">
-                <div class="num">{{ stats.total_demandes }}</div>
-                <div class="label">Demandes</div>
-            </div>
-            <div class="stat-box">
-                <div class="num">{{ stats.total_correspondances }}</div>
-                <div class="label">Matchs</div>
-            </div>
-        </div>
+    <!-- ===== QUICK ACTIONS BAR ===== -->
+    <div class="quick-actions">
+        <a href="{% url 'covoiturage:add_voyage' %}" class="btn-primary">🚗 Publier un trajet</a>
+        <a href="{% url 'covoiturage:search_trajets' %}" class="btn-secondary">🔍 Voir les trajets</a>
+        <a href="{% url 'covoiturage:add_demande' %}" class="btn-secondary">🙋‍♂️ Demander un trajet</a>
+        <a href="{% url 'covoiturage:avis_list' %}" class="btn-secondary">⭐ Avis</a>
+        <a href="/analytics/dashboard/" class="btn-secondary">📊 Analytics</a>
+    </div>
 
-        <!-- SECTION : MES TRAJETS PROPOSÉS -->
-        <h2 class="section-title" id="trajets">🚗 Mes trajets proposés (Conducteur)</h2>
-        <div class="grid">
-            {% for voyage in voyages %}
-            <div class="card">
-                <h3>{{ voyage.ville_depart }} ➔ {{ voyage.ville_arrivee }}{% if voyage.est_termine %} <span class="badge-termine">Terminé</span>{% endif %}</h3>
-                <p><strong>📅 Départ :</strong> {{ voyage.date_depart|date:"d M Y à H:i" }}</p>
-                <p><strong>📍 Ramassage :</strong> {{ voyage.lieu_ramassage|default:"Non précisé" }}</p>
-                <p><strong>🎟️ Places libres :</strong> {{ voyage.places_disponibles }} place(s)</p>
-                <p><strong>💰 Prix :</strong> {{ voyage.prix_par_place }} FCFA</p>
-                {% if voyage.plaque_immatriculation or voyage.modele_voiture %}
-                <p><strong>🚗 Véhicule :</strong> {{ voyage.modele_voiture|default:"—" }} · Plaque {{ voyage.plaque_immatriculation|default:"—" }}</p>
-                <p><strong>🧳 Bagage accepté :</strong> {{ voyage.get_type_bagage_accepte_display }}</p>
-                {% endif %}
-                
-                <div class="card-actions">
-                    {% if not voyage.est_termine %}
-                    <form method="POST" action="{% url 'covoiturage:mark_voyage_termine' voyage.id %}" style="display:inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn-edit">Marquer terminé</button>
-                    </form>
-                    {% endif %}
-                    <a href="{% url 'covoiturage:edit_voyage' voyage.id %}" class="btn-edit">Modifier</a>
-                    <a href="{% url 'covoiturage:delete_voyage' voyage.id %}" class="btn-delete">Supprimer</a>
-                </div>
-            </div>
-            {% empty %}
-            <div class="empty-state">
-                <p>Vous n'avez pas encore proposé de trajet. 🚘</p>
-            </div>
-            {% endfor %}
-        </div>
-        {% if voyages.paginator.num_pages > 1 %}
-        <div class="pagination">
-            {% if voyages.has_previous %}
-            <a href="?page_v={{ voyages.previous_page_number }}&page_d={{ demandes.number }}&page_c={{ correspondances.number }}#trajets">‹ Préc.</a>
-            {% endif %}
-            <span class="current">Page {{ voyages.number }}/{{ voyages.paginator.num_pages }}</span>
-            {% if voyages.has_next %}
-            <a href="?page_v={{ voyages.next_page_number }}&page_d={{ demandes.number }}&page_c={{ correspondances.number }}#trajets">Suiv. ›</a>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- SECTION : MES DEMANDES DE TRAJET -->
-        <h2 class="section-title" id="demandes">🙋‍♂️ Mes demandes de trajet (Passager)</h2>
-        <div class="grid">
-            {% for demande in demandes %}
-            <div class="card">
-                <h3>{{ demande.ville_depart }} ➔ {{ demande.ville_arrivee }}</h3>
-                <p><strong>📅 Date souhaitée :</strong> {{ demande.date_voyage|date:"d M Y" }}</p>
-                <p><strong>🎟️ Places :</strong> {{ demande.places }} place(s)</p>
-                
-                <div class="card-actions">
-                    <a href="{% url 'covoiturage:edit_demande' demande.id %}" class="btn-edit">Modifier</a>
-                    <a href="{% url 'covoiturage:delete_demande' demande.id %}" class="btn-delete">Supprimer</a>
-                </div>
-            </div>
-            {% empty %}
-            <div class="empty-state">
-                <p>Vous n'avez aucune demande de trajet en cours. 🧳</p>
-            </div>
-            {% endfor %}
-        </div>
-        {% if demandes.paginator.num_pages > 1 %}
-        <div class="pagination">
-            {% if demandes.has_previous %}
-            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.previous_page_number }}&page_c={{ correspondances.number }}#demandes">‹ Préc.</a>
-            {% endif %}
-            <span class="current">Page {{ demandes.number }}/{{ demandes.paginator.num_pages }}</span>
-            {% if demandes.has_next %}
-            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.next_page_number }}&page_c={{ correspondances.number }}#demandes">Suiv. ›</a>
-            {% endif %}
-        </div>
-        {% endif %}
-
-        <!-- SECTION : CORRESPONDANCES TROUVÉES -->
-        <h2 class="section-title" id="correspondances">🤝 Matchs & Correspondances</h2>
-        
-        {% if request.user.profile.is_driver and request.user.wallet.balance < 0 %}
-        <div style="background: #FFF5F5; border: 1px solid #FFCDD2; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
-            <h3 style="color: #C62828; margin-bottom: 10px;">⚠️ Crédit insuffisant</h3>
-            <p style="color: #555;">Votre solde est négatif ({{ request.user.wallet.balance }} FCFA). Veuillez recharger votre compte pour voir vos nouveaux matchs et continuer à utiliser la plateforme.</p>
-            <a href="#" onclick="alert('Redirection vers Monetbil...'); return false;" style="display: inline-block; margin-top: 15px; background: #F57C00; color: white; padding: 10px 25px; border-radius: 8px; font-weight: 700; text-decoration: none;">Recharger maintenant</a>
-        </div>
-        {% else %}
-        <div class="grid">
-            {% if correspondances.object_list %}
-                {% for correspondance in correspondances %}
-                <div class="card" style="border-left: 6px solid var(--color-earth);">
-                    <h3>Match trouvé ! 🎉</h3>
-
-                    {% if correspondance.voyage.conducteur_id == request.user.id %}
-                        <p>
-                            <strong>👤 Passager :</strong>
-                            <a href="{% url 'covoiturage:public_profile' correspondance.demande.passager.username %}" style="color: var(--color-earth); font-weight: 600;">
-                                {{ correspondance.demande.passager.username }}
-                            </a>
-                            {% if correspondance.other_note_moyenne %}
-                                <span class="note-badge">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
-                            {% endif %}
-                        </p>
-                        <p><strong>🛣️ Trajet :</strong> {{ correspondance.voyage.ville_depart }} ➔ {{ correspondance.voyage.ville_arrivee }}</p>
-                        <p><strong>📍 Lieu :</strong> {{ correspondance.voyage.lieu_ramassage|default:"Non précisé" }}</p>
-                    {% else %}
-                        <p>
-                            <strong>🚗 Conducteur :</strong>
-                            <a href="{% url 'covoiturage:public_profile' correspondance.voyage.conducteur.username %}" style="color: var(--color-earth); font-weight: 600;">
-                                {{ correspondance.voyage.conducteur.username }}
-                            </a>
-                            {% if correspondance.other_note_moyenne %}
-                                <span class="note-badge">⭐ {{ correspondance.other_note_moyenne|floatformat:1 }}/5</span>
-                            {% endif %}
-                        </p>
-                        <p><strong>🛣️ Trajet :</strong> {{ correspondance.demande.ville_depart }} ➔ {{ correspondance.demande.ville_arrivee }}</p>
-                    {% endif %}
-
-                    {% if correspondance.is_validated and correspondance.other_phone %}
-                        <p><strong>📞 Téléphone :</strong> {{ correspondance.other_phone }}</p>
-                    {% endif %}
-
-                    <p>
-                        <strong>📌 Statut :</strong>
-                        {% if correspondance.is_validated %}
-                            <span style="color: #2E7D32; font-weight: 800; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">Validé ✅</span>
-                        {% else %}
-                            <span style="color: #E65100; font-weight: 800; background: #FFF3E0; padding: 2px 8px; border-radius: 4px;">En attente ⏳</span>
-                        {% endif %}
-                    </p>
-
-                    {% if not correspondance.is_validated %}
-                    <div class="card-actions" style="flex-wrap: wrap; gap: 10px;">
-                        {% if correspondance.voyage.conducteur_id == request.user.id %}
-                            <form method="POST" action="{% url 'covoiturage:validate_correspondance' correspondance.id %}" style="flex: 1; min-width: 120px;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-edit" style="width: 100%; background-color: var(--color-earth); color: white; border: none; cursor: pointer;">Valider ce match</button>
-                            </form>
-                            <form method="POST" action="{% url 'covoiturage:refuse_correspondance' correspondance.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-refuse">Refuser</button>
-                            </form>
-                        {% else %}
-                            <form method="POST" action="{% url 'covoiturage:cancel_correspondance' correspondance.id %}" style="display:inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-refuse">Annuler mon intérêt</button>
-                            </form>
-                        {% endif %}
-                    </div>
-                    {% else %}
-                    <div class="card-actions" style="margin-top: 15px; flex-wrap: wrap; gap: 10px;">
-                        <a href="{% url 'covoiturage:conversation' correspondance.id %}" class="btn-edit" style="flex: 1; background-color: var(--color-earth); color: white; text-align: center;">💬 Message interne</a>
-                        
-                        {% if correspondance.other_phone %}
-                        <a href="https://wa.me/{{ correspondance.other_phone|cut:' '|cut:'+' }}?text=Bonjour, je vous contacte via Covoit.Africa pour notre trajet {{ correspondance.voyage.ville_depart }} -> {{ correspondance.voyage.ville_arrivee }}." 
-                           target="_blank" 
-                           class="btn-edit" 
-                           style="flex: 1; background-color: #25D366; color: white; text-align: center; border: none;">
-                           <svg style="width: 16px; height: 16px; vertical-align: middle; margin-right: 5px; fill: white;" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                           WhatsApp
-                        </a>
-                        {% endif %}
-                    </div>
-                    {% endif %}
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="dashboard-content">
+        <div class="container">
+            <!-- Messages -->
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
                 </div>
                 {% endfor %}
-            {% else %}
-                <div class="empty-state">
-                    <p>Aucune correspondance pour le moment. L'algorithme cherche des passagers/conducteurs pour vous ! 🔍</p>
-                </div>
+            </div>
             {% endif %}
-        </div>
-        {% endif %}
-        {% if correspondances.paginator.num_pages > 1 %}
-        <div class="pagination">
-            {% if correspondances.has_previous %}
-            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.number }}&page_c={{ correspondances.previous_page_number }}#correspondances">‹ Préc.</a>
-            {% endif %}
-            <span class="current">Page {{ correspondances.number }}/{{ correspondances.paginator.num_pages }}</span>
-            {% if correspondances.has_next %}
-            <a href="?page_v={{ voyages.number }}&page_d={{ demandes.number }}&page_c={{ correspondances.next_page_number }}#correspondances">Suiv. ›</a>
-            {% endif %}
-        </div>
-        {% endif %}
 
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="number">{{ stats.total_voyages }}</div>
+                    <div class="label">Trajets proposés</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">{{ stats.total_demandes }}</div>
+                    <div class="label">Demandes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">{{ stats.total_correspondances }}</div>
+                    <div class="label">Matchs trouvés</div>
+                </div>
+                {% if request.user.profile.is_driver and request.user.profile.driver_license_verified %}
+                <div class="stat-card">
+                    <div class="number">{{ request.user.wallet.balance }}</div>
+                    <div class="label">Crédit (FCFA)</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Main Grid: Left (Trips) + Right (Matches) -->
+            <div class="dashboard-grid">
+                <!-- LEFT COLUMN: Trips & Demands -->
+                <div>
+                    <!-- Trips Section -->
+                    <div class="section" style="margin-bottom: 32px;">
+                        <h2 class="section-title">🚗 Mes trajets proposés</h2>
+                        {% if voyages.object_list %}
+                            <div class="cards-grid">
+                                {% for voyage in voyages %}
+                                <div class="card">
+                                    <h4>{{ voyage.ville_depart }} → {{ voyage.ville_arrivee }}</h4>
+                                    <p>📅 {{ voyage.date_depart|date:"d/m/Y H:i" }}</p>
+                                    <p>💺 {{ voyage.places_disponibles }} place(s)</p>
+                                    <p>💰 {{ voyage.prix_par_place }} FCFA</p>
+                                    {% if voyage.est_termine %}<p style="color: #999;">✓ Terminé</p>{% endif %}
+                                    <div class="card-actions">
+                                        <a href="{% url 'covoiturage:edit_voyage' voyage.id %}" class="btn-small btn-edit">Modifier</a>
+                                        <a href="{% url 'covoiturage:delete_voyage' voyage.id %}" class="btn-small btn-delete" onclick="return confirm('Êtes-vous sûr ?')">Supprimer</a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if voyages.paginator.num_pages > 1 %}
+                            <div class="pagination">
+                                {% if voyages.has_previous %}<a href="?page_v={{ voyages.previous_page_number }}&page_d={{ demandes.number }}&page_c={{ correspondances.number }}">‹ Préc.</a>{% endif %}
+                                {% for num in voyages.paginator.page_range %}
+                                    {% if voyages.number == num %}<span class="current">{{ num }}</span>
+                                    {% else %}<a href="?page_v={{ num }}&page_d={{ demandes.number }}&page_c={{ correspondances.number }}">{{ num }}</a>{% endif %}
+                                {% endfor %}
+                                {% if voyages.has_next %}<a href="?page_v={{ voyages.next_page_number }}&page_d={{ demandes.number }}&page_c={{ correspondances.number }}">Suiv. ›</a>{% endif %}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-state">
+                                <p>🚘 Vous n'avez pas encore proposé de trajet.</p>
+                                <a href="{% url 'covoiturage:add_voyage' %}" style="color: var(--earth); font-weight: 700; text-decoration: none;">Proposer un trajet →</a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Demands Section -->
+                    <div class="section">
+                        <h2 class="section-title">🙋‍♂️ Mes demandes de trajet</h2>
+                        {% if demandes.object_list %}
+                            <div class="cards-grid">
+                                {% for demande in demandes %}
+                                <div class="card">
+                                    <h4>{{ demande.ville_depart }} → {{ demande.ville_arrivee }}</h4>
+                                    <p>📅 {{ demande.date_depart|date:"d/m/Y H:i" }}</p>
+                                    <p>👥 {{ demande.nombre_places }} place(s)</p>
+                                    <p>💰 Max {{ demande.prix_max }} FCFA</p>
+                                    <div class="card-actions">
+                                        <a href="{% url 'covoiturage:edit_demande' demande.id %}" class="btn-small btn-edit">Modifier</a>
+                                        <a href="{% url 'covoiturage:delete_demande' demande.id %}" class="btn-small btn-delete" onclick="return confirm('Êtes-vous sûr ?')">Supprimer</a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if demandes.paginator.num_pages > 1 %}
+                            <div class="pagination">
+                                {% if demandes.has_previous %}<a href="?page_v={{ voyages.number }}&page_d={{ demandes.previous_page_number }}&page_c={{ correspondances.number }}">‹ Préc.</a>{% endif %}
+                                {% for num in demandes.paginator.page_range %}
+                                    {% if demandes.number == num %}<span class="current">{{ num }}</span>
+                                    {% else %}<a href="?page_v={{ voyages.number }}&page_d={{ num }}&page_c={{ correspondances.number }}">{{ num }}</a>{% endif %}
+                                {% endfor %}
+                                {% if demandes.has_next %}<a href="?page_v={{ voyages.number }}&page_d={{ demandes.next_page_number }}&page_c={{ correspondances.number }}">Suiv. ›</a>{% endif %}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-state">
+                                <p>🧳 Aucune demande de trajet en cours.</p>
+                                <a href="{% url 'covoiturage:add_demande' %}" style="color: var(--earth); font-weight: 700; text-decoration: none;">Créer une demande →</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: Matches -->
+                <div>
+                    <div class="section">
+                        <h2 class="section-title">🤝 Matchs & Correspondances</h2>
+                        
+                        {% if request.user.profile.is_driver and request.user.wallet.balance < 0 %}
+                        <div style="background: #FFF5F5; border: 1px solid #FFCDD2; padding: 20px; border-radius: var(--radius-md); margin-bottom: 20px; text-align: center;">
+                            <h3 style="color: #C62828; margin-bottom: 10px;">⚠️ Crédit insuffisant</h3>
+                            <p style="color: #555; font-size: 14px;">Veuillez recharger votre compte pour voir vos matchs.</p>
+                            <a href="#" onclick="alert('Redirection vers Monetbil...'); return false;" style="display: inline-block; margin-top: 15px; background: var(--earth); color: white; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: 700; text-decoration: none;">Recharger</a>
+                        </div>
+                        {% else %}
+                        {% if correspondances.object_list %}
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+                                {% for correspondance in correspondances %}
+                                <div class="card">
+                                    <h4>Match trouvé! 🎉</h4>
+                                    {% if correspondance.voyage.conducteur_id == request.user.id %}
+                                        <p>👤 {{ correspondance.demande.passager.username }}</p>
+                                        <p>🚗 {{ correspondance.demande.nombre_places }} place(s)</p>
+                                    {% else %}
+                                        <p>🚗 {{ correspondance.voyage.conducteur.username }}</p>
+                                        <p>📍 {{ correspondance.voyage.lieu_ramassage }}</p>
+                                    {% endif %}
+                                    <p>💬 Status: <strong>{% if correspondance.is_validated %}Validé{% else %}En attente{% endif %}</strong></p>
+                                    <div class="card-actions">
+                                        {% if not correspondance.is_validated %}
+                                            <form action="{% url 'covoiturage:validate_correspondance' correspondance.id %}" method="post" style="flex: 1;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-small" style="background: #E8F5E9; color: #2E7D32; width: 100%;">Accepter</button>
+                                            </form>
+                                            <form action="{% url 'covoiturage:refuse_correspondance' correspondance.id %}" method="post" style="flex: 1;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn-small btn-delete">Refuser</button>
+                                            </form>
+                                        {% else %}
+                                            <a href="{% url 'covoiturage:conversation' correspondance.id %}" class="btn-small" style="background: var(--earth); color: white; text-align: center;">💬 Discuter</a>
+                                            <a href="#" onclick="alert('Redirection WhatsApp...'); return false;" class="btn-small" style="background: #25D366; color: white; text-align: center;">WhatsApp</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% if correspondances.paginator.num_pages > 1 %}
+                            <div class="pagination">
+                                {% if correspondances.has_previous %}<a href="?page_c={{ correspondances.previous_page_number }}">‹ Préc.</a>{% endif %}
+                                {% for num in correspondances.paginator.page_range %}
+                                    {% if correspondances.number == num %}<span class="current">{{ num }}</span>
+                                    {% else %}<a href="?page_c={{ num }}">{{ num }}</a>{% endif %}
+                                {% endfor %}
+                                {% if correspondances.has_next %}<a href="?page_c={{ correspondances.next_page_number }}">Suiv. ›</a>{% endif %}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-state">
+                                <p>🔍 Aucun match pour le moment.</p>
+                                <p style="font-size: 13px; color: var(--text-light);">L'algorithme cherche des correspondances pour vous!</p>
+                            </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </body>
