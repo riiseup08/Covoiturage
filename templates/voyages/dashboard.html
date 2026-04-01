@@ -90,11 +90,25 @@
         <div class="header">
             <div style="display: flex; flex-direction: column; gap: 5px;">
                 <h1>👋 Salut, {{ request.user.username }}</h1>
+                
                 {% if request.user.profile.is_driver %}
-                <div style="display: flex; align-items: center; gap: 10px; background: #FFF8E1; padding: 8px 15px; border-radius: 8px; border: 1px solid #FFECB3;">
-                    <span style="font-size: 14px; font-weight: 700; color: #F57C00;">Crédit : {{ request.user.wallet.balance }} FCFA</span>
-                    <a href="#" onclick="alert('Redirection vers Monetbil... (Simulation)'); return false;" style="background: #F57C00; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 800; text-decoration: none;">Recharger</a>
-                </div>
+                    {% if request.user.profile.driver_license_verified %}
+                        <!-- Driver is verified: Show Wallet -->
+                        <div style="display: flex; align-items: center; gap: 10px; background: #FFF8E1; padding: 8px 15px; border-radius: 8px; border: 1px solid #FFECB3;">
+                            <span style="font-size: 14px; font-weight: 700; color: #F57C00;">Crédit : {{ request.user.wallet.balance }} FCFA</span>
+                            <a href="#" onclick="alert('Redirection vers Monetbil... (Simulation)'); return false;" style="background: #F57C00; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 800; text-decoration: none;">Recharger</a>
+                        </div>
+                    {% elif request.user.profile.driver_license_photo %}
+                        <!-- License uploaded but not yet verified -->
+                        <div style="background: #E3F2FD; border: 1px solid #BBDEFB; padding: 8px 15px; border-radius: 8px; color: #1976D2; font-size: 13px; font-weight: 600;">
+                            ⏳ Votre permis est en cours de vérification par notre équipe.
+                        </div>
+                    {% else %}
+                        <!-- Marked as driver but no license uploaded -->
+                        <div style="background: #FFEBEE; border: 1px solid #FFCDD2; padding: 8px 15px; border-radius: 8px; color: #C62828; font-size: 13px; font-weight: 600;">
+                            ⚠️ Veuillez télécharger votre permis dans votre profil pour être activé.
+                        </div>
+                    {% endif %}
                 {% endif %}
             </div>
             <div class="nav-links">
