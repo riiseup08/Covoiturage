@@ -88,7 +88,15 @@
 
         <!-- En-tête -->
         <div class="header">
-            <h1>👋 Salut, {{ request.user.username }}</h1>
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <h1>👋 Salut, {{ request.user.username }}</h1>
+                {% if request.user.profile.is_driver %}
+                <div style="display: flex; align-items: center; gap: 10px; background: #FFF8E1; padding: 8px 15px; border-radius: 8px; border: 1px solid #FFECB3;">
+                    <span style="font-size: 14px; font-weight: 700; color: #F57C00;">Crédit : {{ request.user.wallet.balance }} FCFA</span>
+                    <a href="#" onclick="alert('Redirection vers Monetbil... (Simulation)'); return false;" style="background: #F57C00; color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 800; text-decoration: none;">Recharger</a>
+                </div>
+                {% endif %}
+            </div>
             <div class="nav-links">
                 <a href="{% url 'covoiturage:notifications_list' %}" class="notification-bell" style="position: relative; background-color: #F1EFE9; color: var(--color-night);">
                     🔔
@@ -205,6 +213,14 @@
 
         <!-- SECTION : CORRESPONDANCES TROUVÉES -->
         <h2 class="section-title" id="correspondances">🤝 Matchs & Correspondances</h2>
+        
+        {% if request.user.profile.is_driver and request.user.wallet.balance < 0 %}
+        <div style="background: #FFF5F5; border: 1px solid #FFCDD2; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+            <h3 style="color: #C62828; margin-bottom: 10px;">⚠️ Crédit insuffisant</h3>
+            <p style="color: #555;">Votre solde est négatif ({{ request.user.wallet.balance }} FCFA). Veuillez recharger votre compte pour voir vos nouveaux matchs et continuer à utiliser la plateforme.</p>
+            <a href="#" onclick="alert('Redirection vers Monetbil...'); return false;" style="display: inline-block; margin-top: 15px; background: #F57C00; color: white; padding: 10px 25px; border-radius: 8px; font-weight: 700; text-decoration: none;">Recharger maintenant</a>
+        </div>
+        {% else %}
         <div class="grid">
             {% if correspondances.object_list %}
                 {% for correspondance in correspondances %}
@@ -290,6 +306,7 @@
                 </div>
             {% endif %}
         </div>
+        {% endif %}
         {% if correspondances.paginator.num_pages > 1 %}
         <div class="pagination">
             {% if correspondances.has_previous %}

@@ -11,7 +11,7 @@ from django.conf import settings
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.exc import GeocoderServiceError
-from .models import Voyage, Demande, Correspondance, Profile, Avis, Notification, Message
+from .models import Voyage, Demande, Correspondance, Profile, Avis, Notification, Message, Wallet, Transaction
 from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm, MessageForm
 from .notifications import get_unread_count, mark_all_read
 
@@ -236,12 +236,41 @@ def cancel_correspondance(request, correspondance_id):
 
 @login_required
 def mark_voyage_termine(request, voyage_id):
-    """Marquer un trajet comme terminé (masqué des recherches)."""
+    """Marquer un trajet comme terminé (masqué des recherches) et déduire la commission."""
     voyage = get_object_or_404(Voyage, id=voyage_id, conducteur=request.user)
     if request.method == 'POST':
-        voyage.est_termine = True
-        voyage.save()
-        messages.success(request, "Trajet marqué comme terminé.")
+        if not voyage.est_termine:
+            voyage.est_termine = True
+            voyage.save()
+            
+            # Calcul de la commission (10% du prix total par place vendue)
+            # On compte le nombre de passagers validés
+            passagers_count = Correspondance.objects.filter(
+                voyage=voyage, is_validated=True, refus_conducteur=False, refus_passager=False
+            ).count()
+            
+            if passagers_count > 0:
+                total_prix = voyage.prix_par_place * passagers_count
+                commission = total_prix * 0.10 # 10% commission
+                
+                if commission > 0:
+                    wallet, _ = Wallet.objects.get_or_create(user=request.user)
+                    wallet.balance -= commission
+                    wallet.save()
+                    
+                    Transaction.objects.create(
+                        wallet=wallet,
+                        amount=-commission,
+                        transaction_type='commission',
+                        description=f"Commission pour le trajet {voyage.ville_depart} -> {voyage.ville_arrivee} ({passagers_count} passagers)",
+                        related_voyage=voyage
+                    )
+                    messages.success(request, f"Trajet terminé. Commission de {commission} FCFA déduite de votre crédit.")
+                else:
+                    messages.success(request, "Trajet marqué comme terminé.")
+            else:
+                messages.success(request, "Trajet marqué comme terminé (aucun passager validé).")
+        
         return redirect('covoiturage:dashboard')
     return redirect('covoiturage:dashboard')
 

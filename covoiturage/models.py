@@ -209,3 +209,46 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender.username}: {self.content[:50]}"
+
+
+class Wallet(models.Model):
+    """Driver's prepaid credit balance for platform commissions."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    currency = models.CharField(max_length=10, default='XAF') # FCFA
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Wallet of {self.user.username}: {self.balance} {self.currency}"
+
+    @property
+    def is_active(self):
+        """Check if the driver has enough credit to receive new matches."""
+        # Allow a small negative buffer (e.g., -500 FCFA) or set to 0.00
+        return self.balance >= 0.00
+
+@receiver(post_save, sender=User)
+def create_user_wallet(sender, instance, created, **kwargs):
+    if created:
+        Wallet.objects.get_or_create(user=instance)
+
+class Transaction(models.Model):
+    """History of all wallet operations (Top-ups and Commission deductions)."""
+    TRANSACTION_TYPES = [
+        ('topup', 'Rechargement (Monetbil)'),
+        ('commission', 'Commission plateforme'),
+        ('refund', 'Remboursement'),
+    ]
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    description = models.CharField(max_length=255, blank=True)
+    related_voyage = models.ForeignKey(Voyage, on_delete=models.SET_NULL, null=True, blank=True)
+    external_reference = models.CharField(max_length=100, blank=True, help_text="Monetbil ID")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.amount} {self.wallet.currency}"
