@@ -3,544 +3,1545 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Covoit.Africa - L'Afrique en mouvement</title>
+    <title>Covoit.Africa — L'Afrique en mouvement</title>
     <meta name="description" content="Covoiturage en Afrique : partagez vos trajets, réduisez vos frais. Trouvez un conducteur ou des passagers en toute confiance.">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Performance: preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <style>
+        /* ===== DESIGN TOKENS ===== */
         :root {
-            /* Palette africaine vibrante et chaude */
-            --color-earth: #D95D39; /* Ocre / Latérite */
-            --color-earth-dark: #A64426;
-            --color-sun: #F2A65A;   /* Soleil / Savane */
-            --color-night: #1A1A1A; /* Nuit profonde */
-            --color-bg: #FAF6ED;    /* Sable clair */
+            --earth:       #D95D39;
+            --earth-dark:  #A64426;
+            --earth-light: #F0806A;
+            --sun:         #F2A65A;
+            --sun-light:   #FDEBD0;
+            --night:       #1A1A1A;
+            --night-soft:  #2C2C2C;
+            --bg:          #FAF6ED;
+            --bg-alt:      #F3EDE0;
+            --white:       #FFFFFF;
+            --text-muted:  #666666;
+            --text-light:  #999999;
+            --border:      rgba(0,0,0,0.08);
+            --shadow-sm:   0 2px 8px rgba(0,0,0,0.06);
+            --shadow-md:   0 8px 24px rgba(0,0,0,0.10);
+            --shadow-lg:   0 20px 50px rgba(0,0,0,0.14);
+            --radius-sm:   6px;
+            --radius-md:   14px;
+            --radius-lg:   24px;
+            --transition:  0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after {
+            margin: 0; padding: 0; box-sizing: border-box;
         }
+
+        html { scroll-behavior: smooth; }
 
         body {
-            background-color: var(--color-bg);
-            color: var(--color-night);
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--night);
             overflow-x: hidden;
-            /* Animation d'entrée douce */
-            animation: fadeIn 1s ease-out;
+            line-height: 1.6;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+        img { max-width: 100%; display: block; }
+        a { text-decoration: none; color: inherit; }
+
+        /* ===== UTILITY ===== */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 5%;
         }
 
-        /* ===== PATTERN TRADITIONNEL AFRICAIN DISCRET ===== */
-        .african-pattern {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: radial-gradient(var(--color-sun) 2px, transparent 2px), radial-gradient(var(--color-sun) 2px, transparent 2px);
-            background-size: 60px 60px;
-            background-position: 0 0, 30px 30px;
-            opacity: 0.05; /* Très discret */
-            z-index: 1;
-            pointer-events: none;
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--earth);
+            margin-bottom: 16px;
         }
 
-        /* ===== NAVIGATION FLUIDE ===== */
-        nav {
-            position: fixed; /* Reste en haut au scroll */
-            top: 0; width: 100%;
-            padding: 25px 5%;
-            display: flex; justify-content: space-between; align-items: center;
+        .section-label::before {
+            content: '';
+            display: inline-block;
+            width: 28px;
+            height: 3px;
+            background: var(--earth);
+            border-radius: 2px;
+        }
+
+        .section-title {
+            font-size: clamp(32px, 4vw, 52px);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.5px;
+            color: var(--night);
+        }
+
+        .section-subtitle {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 560px;
+            margin-top: 14px;
+        }
+
+        /* Scroll-reveal base state */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+
+        /* ===== NAVIGATION ===== */
+        #main-nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
             z-index: 1000;
-            background: linear-gradient(to bottom, rgba(26, 26, 26, 0.9) 0%, rgba(26, 26, 26, 0) 100%);
-            transition: all 0.3s ease;
+            padding: 20px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(to bottom, rgba(26,26,26,0.85) 0%, transparent 100%);
+            backdrop-filter: blur(0px);
+            transition: all var(--transition);
         }
 
-        .logo {
-            font-size: 28px;
+        #main-nav.scrolled {
+            background: rgba(26, 26, 26, 0.97);
+            backdrop-filter: blur(12px);
+            padding: 14px 5%;
+            box-shadow: 0 2px 24px rgba(0,0,0,0.25);
+        }
+
+        .nav-logo {
+            font-size: 26px;
             font-weight: 900;
             color: #fff;
-            text-decoration: none;
             letter-spacing: 1px;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 2px;
+        }
+        .nav-logo span { color: var(--earth); }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
         }
 
-        .logo span { color: var(--color-earth); }
-
-        .nav-links { display: flex; gap: 30px; align-items: center; }
-        
         .nav-link {
-            color: #fff;
-            text-decoration: none;
+            color: rgba(255,255,255,0.85);
             font-weight: 600;
-            font-size: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            font-size: 15px;
+            letter-spacing: 0.5px;
             position: relative;
+            transition: color var(--transition);
         }
-
-        /* Soulignement dynamique au survol */
+        .nav-link:hover { color: #fff; }
         .nav-link::after {
-            content: ''; position: absolute; width: 0; height: 2px;
-            bottom: -5px; left: 0; background-color: var(--color-earth);
-            transition: width 0.3s ease;
+            content: '';
+            position: absolute;
+            bottom: -4px; left: 0;
+            width: 0; height: 2px;
+            background: var(--earth);
+            transition: width var(--transition);
         }
         .nav-link:hover::after { width: 100%; }
 
         .btn-nav {
-            background-color: var(--color-earth);
-            color: white !important;
-            padding: 12px 30px;
-            border-radius: 4px; /* Bord carré moderne */
+            background: var(--earth);
+            color: #fff !important;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
             font-weight: 700;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 4px 4px 0px var(--color-sun);
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition);
+            box-shadow: 0 4px 14px rgba(217, 93, 57, 0.4);
         }
-
         .btn-nav:hover {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0px var(--color-sun);
+            background: var(--earth-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(217, 93, 57, 0.5);
         }
 
-        /* ===== HERO SECTION (PARALLAX + FULLSCREEN) ===== */
+        /* Hamburger */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 4px;
+            background: none;
+            border: none;
+        }
+        .hamburger span {
+            display: block;
+            width: 24px; height: 2px;
+            background: #fff;
+            border-radius: 2px;
+            transition: all var(--transition);
+        }
+        .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.open span:nth-child(2) { opacity: 0; }
+        .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        /* Mobile nav drawer */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(26,26,26,0.98);
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--transition);
+        }
+        .mobile-nav.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .mobile-nav a {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .mobile-nav .btn-nav { font-size: 20px; padding: 14px 40px; }
+
+        /* ===== HERO ===== */
         .hero {
-            height: 100vh;
-            width: 100%;
             position: relative;
+            min-height: 100vh;
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* Aligné à gauche */
-            padding: 0 8%;
-            /* Effet Parallax avec image de route africaine */
+            padding: 120px 5% 80px;
             background-image: url('https://images.unsplash.com/photo-1547471080-7fc2caa7f5a6?q=80&w=2071&auto=format&fit=crop');
-            background-attachment: fixed; /* C'est ça qui crée l'effet parallax au scroll ! */
-            background-position: center;
             background-size: cover;
-            background-repeat: no-repeat;
+            background-position: center;
+            background-attachment: fixed;
         }
 
-        /* Filtre sombre pour lire le texte */
         .hero-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(90deg, rgba(26,26,26,0.9) 0%, rgba(26,26,26,0.4) 100%);
-            z-index: 2;
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                105deg,
+                rgba(26,26,26,0.93) 0%,
+                rgba(26,26,26,0.70) 55%,
+                rgba(26,26,26,0.30) 100%
+            );
+        }
+
+        /* Decorative geometric accent */
+        .hero-accent {
+            position: absolute;
+            right: 6%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 380px;
+            height: 380px;
+            border-radius: 50%;
+            border: 2px solid rgba(242, 166, 90, 0.15);
+            z-index: 3;
+            pointer-events: none;
+        }
+        .hero-accent::before {
+            content: '';
+            position: absolute;
+            inset: 30px;
+            border-radius: 50%;
+            border: 2px solid rgba(217, 93, 57, 0.12);
+        }
+        .hero-accent::after {
+            content: '';
+            position: absolute;
+            inset: 60px;
+            border-radius: 50%;
+            background: rgba(217, 93, 57, 0.06);
         }
 
         .hero-content {
             position: relative;
             z-index: 10;
-            max-width: 700px;
-            color: white;
-            /* Animation d'apparition qui glisse depuis la gauche */
-            animation: slideRight 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            max-width: 680px;
+            color: #fff;
+            animation: heroIn 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
         }
 
-        @keyframes slideRight {
-            0% { opacity: 0; transform: translateX(-50px); }
-            100% { opacity: 1; transform: translateX(0); }
+        @keyframes heroIn {
+            from { opacity: 0; transform: translateX(-40px); }
+            to   { opacity: 1; transform: translateX(0); }
         }
 
-        .tagline {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--color-sun);
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 20px;
-            display: flex;
+        .hero-label {
+            display: inline-flex;
             align-items: center;
             gap: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--sun);
+            margin-bottom: 20px;
+        }
+        .hero-label::before {
+            content: '';
+            display: inline-block;
+            width: 36px; height: 3px;
+            background: var(--earth);
+            border-radius: 2px;
         }
 
-        /* Ligne décorative avant la tagline */
-        .tagline::before {
-            content: ''; display: inline-block; width: 40px; height: 3px;
-            background-color: var(--color-earth);
-        }
-
-        h1 {
-            font-size: clamp(50px, 6vw, 85px); /* Fluide et massif */
+        .hero h1 {
+            font-size: clamp(48px, 6.5vw, 90px);
             font-weight: 900;
-            line-height: 1.1;
-            margin-bottom: 30px;
-            letter-spacing: -1px;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            line-height: 1.05;
+            letter-spacing: -2px;
+            margin-bottom: 24px;
+            text-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
 
-        p.desc {
-            font-size: 20px;
-            line-height: 1.6;
-            color: #ddd;
-            margin-bottom: 45px;
+        .hero h1 em {
+            font-style: normal;
+            color: var(--earth-light);
+        }
+
+        .hero-desc {
+            font-size: 19px;
+            line-height: 1.65;
+            color: rgba(255,255,255,0.80);
+            margin-bottom: 40px;
             font-weight: 400;
+            max-width: 560px;
         }
 
-        /* ----- BOUTONS DYNAMIQUES ----- */
+        /* Quick search bar */
+        .hero-search {
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .hero-search input {
+            flex: 1;
+            min-width: 120px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+        .hero-search input::placeholder { color: rgba(255,255,255,0.5); }
+        .hero-search input:focus { border-color: var(--earth-light); }
+
+        .hero-search button {
+            background: var(--earth);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 12px 24px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hero-search button:hover {
+            background: var(--earth-dark);
+            transform: translateY(-1px);
+        }
+
         .cta-group {
             display: flex;
-            gap: 20px;
+            gap: 14px;
+            flex-wrap: wrap;
         }
 
         .btn-large {
-            padding: 18px 40px;
-            font-size: 18px;
+            padding: 16px 36px;
+            font-size: 16px;
             font-weight: 700;
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
-            border-radius: 4px;
-            transition: all 0.3s ease;
+            border-radius: var(--radius-sm);
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
         }
 
         .btn-primary {
-            background-color: var(--color-earth);
-            color: white;
-            border: 2px solid var(--color-earth);
+            background: var(--earth);
+            color: #fff;
+            border-color: var(--earth);
+            box-shadow: 0 6px 20px rgba(217, 93, 57, 0.4);
+        }
+        .btn-primary:hover {
+            background: var(--earth-dark);
+            border-color: var(--earth-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(217, 93, 57, 0.5);
         }
 
-        /* Effet de balayage sur le bouton au survol */
-        .btn-primary::before {
-            content: ''; position: absolute; top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s ease;
+        .btn-outline {
+            background: transparent;
+            color: #fff;
+            border-color: rgba(255,255,255,0.5);
         }
-        .btn-primary:hover::before { left: 100%; }
-        .btn-primary:hover { background-color: var(--color-earth-dark); }
-
-        .btn-secondary {
-            background-color: transparent;
-            color: white;
-            border: 2px solid white;
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: #fff;
         }
 
-        .btn-secondary:hover {
-            background-color: white;
-            color: var(--color-night);
+        /* Hero stats bar */
+        .hero-stats {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            z-index: 10;
+            background: rgba(26,26,26,0.75);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            padding: 20px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
         }
 
-        /* ===== SECTION CARACTÉRISTIQUES (DYNAMIQUE) ===== */
+        .hero-stat {
+            flex: 1;
+            max-width: 220px;
+            text-align: center;
+            padding: 0 24px;
+            border-right: 1px solid rgba(255,255,255,0.10);
+        }
+        .hero-stat:last-child { border-right: none; }
+
+        .hero-stat-num {
+            font-size: 32px;
+            font-weight: 900;
+            color: var(--sun);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .hero-stat-label {
+            font-size: 13px;
+            color: rgba(255,255,255,0.55);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== FEATURES SECTION ===== */
         .features {
-            padding: 120px 8%;
-            background-color: var(--color-bg);
+            padding: 110px 0;
+            background: var(--bg);
             position: relative;
             overflow: hidden;
         }
 
-        .section-header {
-            text-align: center;
-            margin-bottom: 80px;
+        /* Subtle background pattern */
+        .features::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(var(--sun) 1.5px, transparent 1.5px),
+                radial-gradient(var(--sun) 1.5px, transparent 1.5px);
+            background-size: 48px 48px;
+            background-position: 0 0, 24px 24px;
+            opacity: 0.04;
+            pointer-events: none;
+        }
+
+        .features-header {
+            margin-bottom: 64px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+        }
+
+        .feature-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 44px 32px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
             position: relative;
-            z-index: 10;
+            overflow: hidden;
         }
 
-        .section-header h2 {
-            font-size: 50px;
-            font-weight: 800;
-            color: var(--color-night);
+        .feature-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--earth), var(--sun));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform var(--transition);
         }
 
-        .cards-container {
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: transparent;
+        }
+        .feature-card:hover::after { transform: scaleX(1); }
+
+        .feature-icon {
+            width: 64px; height: 64px;
+            background: var(--sun-light);
+            border-radius: var(--radius-sm);
             display: flex;
-            gap: 40px;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Cartes qui se soulèvent au survol */
-        .card {
-            flex: 1;
-            background: white;
-            padding: 50px 30px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-            border-bottom: 5px solid transparent;
-        }
-
-        .card:hover {
-            transform: translateY(-15px);
-            box-shadow: 0 25px 45px rgba(0,0,0,0.1);
-            border-bottom: 5px solid var(--color-earth);
-        }
-
-        .card-icon {
-            width: 80px; height: 80px;
-            background-color: #FFF2ED;
-            color: var(--color-earth);
-            border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 32px; font-weight: 900;
-            margin: 0 auto 25px auto;
-        }
-
-        .card h3 {
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 15px;
-        }
-
-        .card p {
-            color: #666;
-            line-height: 1.6;
-        }
-
-        /* ===== COMMENT ÇA MARCHE ===== */
-        .steps-container {
-            display: flex;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            position: relative;
-            z-index: 10;
-            max-width: 1000px;
-            margin: 0 auto;
+            margin-bottom: 24px;
         }
-        .step {
-            flex: 1;
-            min-width: 220px;
-            background: white;
-            padding: 35px 25px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-            text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+        .feature-icon svg {
+            width: 30px; height: 30px;
+            stroke: var(--earth);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
-        .step:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
-        }
-        .step-num {
-            display: inline-block;
-            width: 48px; height: 48px;
-            background: linear-gradient(135deg, var(--color-earth), var(--color-sun));
-            color: white;
-            border-radius: 50%;
+
+        .feature-card h3 {
             font-size: 22px;
             font-weight: 800;
-            line-height: 48px;
-            margin-bottom: 18px;
+            margin-bottom: 12px;
+            color: var(--night);
         }
-        .step h3 {
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.65;
+        }
+
+        /* ===== HOW IT WORKS ===== */
+        .how-it-works {
+            padding: 110px 0;
+            background: var(--bg-alt);
+        }
+
+        .how-header {
+            text-align: center;
+            margin-bottom: 72px;
+        }
+        .how-header .section-subtitle {
+            margin: 14px auto 0;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            position: relative;
+        }
+
+        /* Connecting line between steps */
+        .steps-grid::before {
+            content: '';
+            position: absolute;
+            top: 36px;
+            left: calc(16.66% + 16px);
+            right: calc(16.66% + 16px);
+            height: 2px;
+            background: linear-gradient(90deg, var(--earth), var(--sun), var(--earth));
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .step-item {
+            text-align: center;
+            padding: 0 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-badge {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--earth), var(--sun));
+            color: #fff;
+            font-size: 26px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 28px;
+            box-shadow: 0 8px 24px rgba(217, 93, 57, 0.35);
+            position: relative;
+        }
+
+        .step-badge::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px dashed rgba(217, 93, 57, 0.25);
+        }
+
+        .step-item h3 {
             font-size: 20px;
             font-weight: 800;
             margin-bottom: 12px;
-            color: var(--color-night);
+            color: var(--night);
         }
-        .step p {
-            color: #666;
+
+        .step-item p {
+            color: var(--text-muted);
             font-size: 15px;
-            line-height: 1.5;
+            line-height: 1.65;
         }
-        .step-arrow {
-            color: var(--color-earth);
-            font-size: 28px;
+
+        /* ===== TRUST / STATS SECTION ===== */
+        .trust-section {
+            padding: 100px 0;
+            background: var(--night);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trust-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(217, 93, 57, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .trust-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .trust-text .section-label { color: var(--sun); }
+        .trust-text .section-label::before { background: var(--sun); }
+        .trust-text .section-title { color: #fff; }
+        .trust-text .section-subtitle { color: rgba(255,255,255,0.55); }
+
+        .trust-badges {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 36px;
+        }
+
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            transition: all var(--transition);
+        }
+        .trust-badge:hover {
+            background: rgba(255,255,255,0.09);
+            border-color: rgba(217, 93, 57, 0.3);
+        }
+
+        .trust-badge-icon {
+            width: 42px; height: 42px;
+            background: rgba(217, 93, 57, 0.15);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .trust-badge-icon svg {
+            width: 20px; height: 20px;
+            stroke: var(--earth-light);
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .trust-badge-text strong {
+            display: block;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .trust-badge-text span {
+            color: rgba(255,255,255,0.45);
+            font-size: 13px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: var(--radius-md);
+            padding: 32px 24px;
+            text-align: center;
+            transition: all var(--transition);
+        }
+        .stat-card:hover {
+            background: rgba(255,255,255,0.09);
+            border-color: rgba(217, 93, 57, 0.3);
+            transform: translateY(-4px);
+        }
+
+        .stat-num {
+            font-size: 44px;
+            font-weight: 900;
+            color: var(--sun);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.5);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== TESTIMONIALS ===== */
+        .testimonials {
+            padding: 110px 0;
+            background: var(--bg);
+        }
+
+        .testimonials-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        .testimonials-header .section-subtitle { margin: 14px auto 0; }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
+        }
+
+        .testimonial-card {
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 36px 28px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+        .testimonial-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stars {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 18px;
+        }
+        .star {
+            width: 18px; height: 18px;
+            fill: var(--sun);
+            stroke: none;
+        }
+
+        .testimonial-text {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text-muted);
+            flex: 1;
+            margin-bottom: 24px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .author-avatar {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--earth), var(--sun));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
             font-weight: 800;
-            align-self: center;
-            opacity: 0.7;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .author-info strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--night);
+        }
+        .author-info span {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        /* ===== CTA BANNER ===== */
+        .cta-banner {
+            padding: 100px 0;
+            background: linear-gradient(135deg, var(--earth-dark) 0%, var(--earth) 50%, var(--sun) 100%);
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .cta-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(rgba(255,255,255,0.08) 1.5px, transparent 1.5px),
+                radial-gradient(rgba(255,255,255,0.08) 1.5px, transparent 1.5px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+
+        .cta-banner-inner {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-banner h2 {
+            font-size: clamp(32px, 4vw, 54px);
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: -0.5px;
+            margin-bottom: 16px;
+        }
+
+        .cta-banner p {
+            font-size: 18px;
+            color: rgba(255,255,255,0.80);
+            margin-bottom: 40px;
+            max-width: 520px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-banner-btns {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-white {
+            background: #fff;
+            color: var(--earth-dark);
+            padding: 16px 40px;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 800;
+            transition: all var(--transition);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #fff;
+            padding: 16px 40px;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 700;
+            border: 2px solid rgba(255,255,255,0.5);
+            transition: all var(--transition);
+        }
+        .btn-ghost:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: #fff;
         }
 
         /* ===== FOOTER ===== */
         .footer {
-            background: var(--color-night);
-            color: #ccc;
-            padding: 50px 8% 30px;
-            text-align: center;
+            background: var(--night-soft);
+            padding: 72px 0 32px;
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
-        .footer-inner {
-            max-width: 700px;
-            margin: 0 auto;
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 56px;
         }
-        .footer-logo {
+
+        .footer-brand .footer-logo {
             font-size: 24px;
             font-weight: 900;
             color: #fff;
-            text-decoration: none;
             display: inline-block;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
-        .footer-logo span { color: var(--color-earth); }
-        .footer-tagline {
-            font-size: 16px;
-            margin-bottom: 28px;
-            color: #999;
-        }
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 28px;
-            flex-wrap: wrap;
-            margin-bottom: 30px;
-        }
-        .footer-links a {
-            color: var(--color-sun);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 15px;
-        }
-        .footer-links a:hover { color: white; text-decoration: underline; }
-        .footer-copy {
+        .footer-brand .footer-logo span { color: var(--earth); }
+
+        .footer-brand p {
+            color: rgba(255,255,255,0.45);
             font-size: 14px;
-            color: #666;
+            line-height: 1.7;
+            max-width: 260px;
         }
 
-        /* ===== NAV AU SCROLL (fond plein) ===== */
-        nav.scrolled {
-            background: rgba(26, 26, 26, 0.98);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+        .footer-col h4 {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
         }
 
-        /* ===== MOBILE RESPONSIVE ===== */
-        @media (max-width: 900px) {
-            .hero { padding: 0 5%; justify-content: center; text-align: center; background-attachment: scroll; }
-            .hero-overlay { background: rgba(26,26,26,0.7); }
-            .hero-content { display: flex; flex-direction: column; align-items: center; }
-            .tagline::before { display: none; }
-            .cta-group { flex-direction: column; width: 100%; align-items: stretch; }
-            .btn-large { text-align: center; }
-            .nav-links a:not(.btn-nav) { display: none; }
-            
-            .cards-container { flex-direction: column; }
-            .section-header h2 { font-size: 36px; }
-            
-            .steps-container { flex-direction: column; align-items: stretch; }
-            .step-arrow { transform: rotate(90deg); align-self: center; }
+        .footer-col ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-col ul a {
+            color: rgba(255,255,255,0.45);
+            font-size: 14px;
+            transition: color var(--transition);
+        }
+        .footer-col ul a:hover { color: var(--sun); }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding-top: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .footer-bottom p {
+            color: rgba(255,255,255,0.30);
+            font-size: 13px;
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            gap: 24px;
+        }
+        .footer-bottom-links a {
+            color: rgba(255,255,255,0.30);
+            font-size: 13px;
+            transition: color var(--transition);
+        }
+        .footer-bottom-links a:hover { color: rgba(255,255,255,0.6); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .features-grid,
+            .testimonials-grid { grid-template-columns: repeat(2, 1fr); }
+            .trust-inner { grid-template-columns: 1fr; gap: 48px; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hamburger { display: flex; }
+            .mobile-nav { display: flex; }
+
+            .hero { background-attachment: scroll; padding: 100px 5% 100px; }
+            .hero-accent { display: none; }
+            .hero h1 { font-size: clamp(40px, 10vw, 64px); }
+            .hero-search { flex-direction: column; }
+            .hero-stats { flex-direction: column; gap: 16px; padding: 24px 5%; }
+            .hero-stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.10); padding: 12px 0; max-width: 100%; }
+            .hero-stat:last-child { border-bottom: none; }
+
+            .features-grid,
+            .testimonials-grid,
+            .steps-grid { grid-template-columns: 1fr; }
+            .steps-grid::before { display: none; }
+
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+
+            .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+            .footer-bottom { flex-direction: column; text-align: center; }
+
+            .cta-group { flex-direction: column; }
+            .btn-large { text-align: center; justify-content: center; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .hero-stats { display: none; }
         }
     </style>
 </head>
 <body>
 
-    <nav id="main-nav">
-        <a href="{% url 'covoiturage:landing' %}" class="logo">COVOIT<span>.</span>AFRICA</a>
-        <div class="nav-links">
-            {% if request.user.is_authenticated %}
-                <a href="{% url 'covoiturage:dashboard' %}" class="nav-link">Mon espace</a>
-                <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-nav" style="border:none; cursor:pointer;">Déconnexion</button>
-                </form>
-            {% else %}
-                <a href="{% url 'login' %}" class="nav-link">Connexion</a>
-                <a href="{% url 'covoiturage:register' %}" class="btn-nav">Rejoindre</a>
-            {% endif %}
-        </div>
-    </nav>
+<!-- ===== NAVIGATION ===== -->
+<nav id="main-nav">
+    <a href="{% url 'covoiturage:landing' %}" class="nav-logo">COVOIT<span>.</span>AFRICA</a>
 
-    <!-- SECTION 1 : Parallax Hero -->
-    <section class="hero">
-        <div class="hero-overlay"></div>
+    <div class="nav-links">
+        {% if request.user.is_authenticated %}
+            <a href="{% url 'covoiturage:search_trajets' %}" class="nav-link">Trajets</a>
+            <a href="{% url 'covoiturage:dashboard' %}" class="nav-link">Mon espace</a>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-nav">Déconnexion</button>
+            </form>
+        {% else %}
+            <a href="{% url 'covoiturage:search_trajets' %}" class="nav-link">Voir les trajets</a>
+            <a href="{% url 'login' %}" class="nav-link">Connexion</a>
+            <a href="{% url 'covoiturage:register' %}" class="btn-nav">Rejoindre gratuitement</a>
+        {% endif %}
+    </div>
+
+    <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
+</nav>
+
+<!-- Mobile nav drawer -->
+<div class="mobile-nav" id="mobile-nav">
+    {% if request.user.is_authenticated %}
+        <a href="{% url 'covoiturage:search_trajets' %}">Trajets</a>
+        <a href="{% url 'covoiturage:dashboard' %}">Mon espace</a>
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn-nav">Déconnexion</button>
+        </form>
+    {% else %}
+        <a href="{% url 'covoiturage:search_trajets' %}">Voir les trajets</a>
+        <a href="{% url 'login' %}">Connexion</a>
+        <a href="{% url 'covoiturage:register' %}" class="btn-nav">Rejoindre gratuitement</a>
+    {% endif %}
+</div>
+
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-accent"></div>
+
+    <div class="container">
         <div class="hero-content">
-            <div class="tagline">Parcourez le continent</div>
-            <h1>La route nous<br>appartient.</h1>
-            <p class="desc">De ville en ville, partagez vos trajets. Rencontrez des personnes formidables, réduisez vos frais et participez au plus grand réseau de mobilité africain.</p>
-            
+            <div class="hero-label">Parcourez le continent</div>
+
+            <h1>La route nous<br><em>appartient.</em></h1>
+
+            <p class="hero-desc">
+                De ville en ville, partagez vos trajets avec des personnes de confiance.
+                Réduisez vos frais, rencontrez des gens formidables et contribuez
+                au plus grand réseau de mobilité africain.
+            </p>
+
+            <!-- Quick search bar -->
+            <form class="hero-search" action="{% url 'covoiturage:search_trajets' %}" method="get">
+                <input type="text" name="ville_depart" placeholder="Ville de départ…" autocomplete="off">
+                <input type="text" name="ville_arrivee" placeholder="Ville d'arrivée…" autocomplete="off">
+                <input type="date" name="date" style="color-scheme: dark;">
+                <button type="submit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    Rechercher
+                </button>
+            </form>
+
             <div class="cta-group">
                 {% if request.user.is_authenticated %}
-                <a href="{% url 'covoiturage:add_voyage' %}" class="btn-large btn-primary">Publier un trajet</a>
-                <a href="{% url 'covoiturage:search_trajets' %}" class="btn-large btn-secondary">Voir les trajets disponibles</a>
+                    <a href="{% url 'covoiturage:add_voyage' %}" class="btn-large btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                        Publier un trajet
+                    </a>
+                    <a href="{% url 'covoiturage:search_trajets' %}" class="btn-large btn-outline">Voir les trajets</a>
                 {% else %}
-                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-primary">Je propose un trajet</a>
-                <a href="{% url 'covoiturage:register' %}" class="btn-large btn-secondary">Je cherche un trajet</a>
+                    <a href="{% url 'covoiturage:register' %}" class="btn-large btn-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Je propose un trajet
+                    </a>
+                    <a href="{% url 'covoiturage:search_trajets' %}" class="btn-large btn-outline">Voir les trajets disponibles</a>
                 {% endif %}
             </div>
         </div>
-    </section>
+    </div>
 
-    <!-- SECTION 2 : Cartes dynamiques -->
-    <section class="features">
-        <div class="african-pattern"></div>
-        
-        <div class="section-header">
-            <h2>Une nouvelle façon de voyager</h2>
+    <!-- Stats bar -->
+    <div class="hero-stats">
+        <div class="hero-stat">
+            <div class="hero-stat-num" data-count="2400" data-suffix="+">0</div>
+            <div class="hero-stat-label">Membres actifs</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-num" data-count="850" data-suffix="+">0</div>
+            <div class="hero-stat-label">Trajets publiés</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-num" data-count="40" data-suffix=" villes">0</div>
+            <div class="hero-stat-label">Villes couvertes</div>
+        </div>
+        <div class="hero-stat">
+            <div class="hero-stat-num" data-count="98" data-suffix="%">0</div>
+            <div class="hero-stat-label">Satisfaction membres</div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===== FEATURES ===== -->
+<section class="features">
+    <div class="container">
+        <div class="features-header reveal">
+            <div class="section-label">Pourquoi nous choisir</div>
+            <h2 class="section-title">Une nouvelle façon de voyager</h2>
+            <p class="section-subtitle">Covoit.Africa combine technologie et solidarité pour rendre la mobilité accessible à tous.</p>
         </div>
 
-        <div class="cards-container">
-            <!-- Carte 1 -->
-            <div class="card">
-                <div class="card-icon">1</div>
+        <div class="features-grid">
+            <!-- Card 1 -->
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    <!-- Coin/money icon -->
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M8.5 9.5A3.5 3.5 0 0 1 12 8c1.93 0 3.5 1.57 3.5 3.5S13.93 15 12 15a3.5 3.5 0 0 1-3.5-3.5"/></svg>
+                </div>
                 <h3>Économique</h3>
-                <p>Ne payez plus le prix fort pour voyager. Divisez les coûts d'essence et de péage de manière juste et transparente avec vos compagnons de route.</p>
+                <p>Divisez les frais d'essence et de péage équitablement. Nos conducteurs fixent leur prix librement — vous voyagez à moindre coût, eux rentabilisent leur trajet.</p>
             </div>
-            
-            <!-- Carte 2 -->
-            <div class="card">
-                <div class="card-icon">2</div>
+
+            <!-- Card 2 -->
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
                 <h3>Convivial</h3>
-                <p>La route est longue ? L'ambiance la raccourcit. Voyagez avec des personnes partageant vos valeurs et transformez un long trajet en un moment agréable.</p>
+                <p>Transformez un long trajet en moment agréable. Voyagez avec des personnes partageant vos valeurs, discutez, et arrivez à destination avec de nouveaux contacts.</p>
             </div>
-            
-            <!-- Carte 3 -->
-            <div class="card">
-                <div class="card-icon">3</div>
+
+            <!-- Card 3 -->
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
                 <h3>Sécurisé</h3>
-                <p>Votre sécurité est notre priorité. Chaque membre peut être noté après le trajet. Vous choisissez avec qui vous partez en toute confiance.</p>
+                <p>Chaque membre est noté après chaque trajet. Profils vérifiés, avis authentiques, et système de confiance intégré pour voyager l'esprit tranquille.</p>
             </div>
+
+            <!-- Card 4 -->
+            <div class="feature-card reveal reveal-delay-1">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h3>Messagerie intégrée</h3>
+                <p>Coordonnez-vous directement avec votre conducteur ou passager via notre messagerie intégrée. Confirmez le lieu de rendez-vous sans quitter l'application.</p>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="feature-card reveal reveal-delay-2">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h3>Matching intelligent</h3>
+                <p>Notre algorithme analyse villes, dates et disponibilités pour vous proposer les meilleures correspondances. Trouvez votre trajet idéal en quelques secondes.</p>
+            </div>
+
+            <!-- Card 6 -->
+            <div class="feature-card reveal reveal-delay-3">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <h3>Notifications en temps réel</h3>
+                <p>Soyez alerté instantanément dès qu'un match est trouvé, validé ou qu'un message arrive. Ne manquez jamais une opportunité de voyage.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="how-it-works">
+    <div class="container">
+        <div class="how-header reveal">
+            <div class="section-label">Simple et rapide</div>
+            <h2 class="section-title">Comment ça marche ?</h2>
+            <p class="section-subtitle">En trois étapes, trouvez un trajet ou remplissez votre voiture.</p>
         </div>
 
-        <!-- Comment ça marche -->
-        <div class="section-header" style="margin-top: 100px;">
-            <h2>Comment ça marche ?</h2>
-            <p style="color: #666; font-size: 18px; margin-top: 15px; max-width: 600px; margin-left: auto; margin-right: auto;">En trois étapes, trouvez un trajet ou remplissez votre voiture.</p>
-        </div>
-        <div class="steps-container">
-            <div class="step">
-                <span class="step-num">1</span>
-                <h3>Inscrivez-vous</h3>
-                <p>Créez un compte gratuit en une minute. Complétez votre profil (bio, téléphone) pour rassurer les autres.</p>
+        <div class="steps-grid">
+            <div class="step-item reveal reveal-delay-1">
+                <div class="step-badge">1</div>
+                <h3>Créez votre compte</h3>
+                <p>Inscription gratuite en une minute. Complétez votre profil avec une photo et une bio pour rassurer vos futurs compagnons de route.</p>
             </div>
-            <div class="step-arrow">→</div>
-            <div class="step">
-                <span class="step-num">2</span>
+
+            <div class="step-item reveal reveal-delay-2">
+                <div class="step-badge">2</div>
                 <h3>Publiez ou cherchez</h3>
-                <p>Conducteur : proposez un trajet (ville, date, prix). Passager : publiez une demande ou parcourez les trajets disponibles.</p>
+                <p>Conducteur : proposez un trajet avec ville, date, prix et type de bagages acceptés. Passager : parcourez les trajets ou publiez une demande.</p>
             </div>
-            <div class="step-arrow">→</div>
-            <div class="step">
-                <span class="step-num">3</span>
-                <h3>Voyagez</h3>
-                <p>Validez votre match, coordonnez le lieu de rendez-vous et partagez la route. Puis laissez un avis après le trajet.</p>
+
+            <div class="step-item reveal reveal-delay-3">
+                <div class="step-badge">3</div>
+                <h3>Voyagez ensemble</h3>
+                <p>Validez le match, coordonnez le point de rendez-vous via la messagerie, puis partagez la route. Laissez un avis après le trajet.</p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-inner">
-            <a href="{% url 'covoiturage:landing' %}" class="footer-logo">COVOIT<span>.</span>AFRICA</a>
-            <p class="footer-tagline">L'Afrique en mouvement. Covoiturage simple, sûr et solidaire.</p>
-            <div class="footer-links">
+
+<!-- ===== TRUST SECTION ===== -->
+<section class="trust-section">
+    <div class="container">
+        <div class="trust-inner">
+            <div class="trust-text reveal">
+                <div class="section-label">Confiance & Sécurité</div>
+                <h2 class="section-title">Voyagez en toute confiance</h2>
+                <p class="section-subtitle">Nous avons conçu chaque fonctionnalité pour que vous puissiez voyager sereinement.</p>
+
+                <div class="trust-badges">
+                    <div class="trust-badge">
+                        <div class="trust-badge-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <div class="trust-badge-text">
+                            <strong>Profils vérifiés</strong>
+                            <span>Pièce d'identité et permis de conduire vérifiés par notre équipe</span>
+                        </div>
+                    </div>
+                    <div class="trust-badge">
+                        <div class="trust-badge-icon">
+                            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        </div>
+                        <div class="trust-badge-text">
+                            <strong>Système d'avis</strong>
+                            <span>Chaque trajet est noté — conducteurs et passagers mutuellement évalués</span>
+                        </div>
+                    </div>
+                    <div class="trust-badge">
+                        <div class="trust-badge-icon">
+                            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <div class="trust-badge-text">
+                            <strong>Communication directe</strong>
+                            <span>Messagerie sécurisée entre membres matchés pour coordonner le trajet</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid reveal">
+                <div class="stat-card">
+                    <div class="stat-num" data-count="2400" data-suffix="+">2 400+</div>
+                    <div class="stat-label">Membres inscrits</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" data-count="850" data-suffix="+">850+</div>
+                    <div class="stat-label">Trajets publiés</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" data-count="40" data-suffix="">40</div>
+                    <div class="stat-label">Villes couvertes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" data-count="4" data-suffix=".8★">4.8★</div>
+                    <div class="stat-label">Note moyenne</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===== TESTIMONIALS ===== -->
+<section class="testimonials">
+    <div class="container">
+        <div class="testimonials-header reveal">
+            <div class="section-label">Ils témoignent</div>
+            <h2 class="section-title">Ce que disent nos membres</h2>
+            <p class="section-subtitle">Des milliers de voyageurs font confiance à Covoit.Africa chaque semaine.</p>
+        </div>
+
+        <div class="testimonials-grid">
+            <div class="testimonial-card reveal reveal-delay-1">
+                <div class="stars">
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <p class="testimonial-text">« J'ai trouvé un trajet Dakar–Thiès en moins de 5 minutes. Le conducteur était ponctuel, la voiture propre. J'ai économisé la moitié du prix du bus ! »</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">A</div>
+                    <div class="author-info">
+                        <strong>Aminata D.</strong>
+                        <span>Passagère — Dakar, Sénégal</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card reveal reveal-delay-2">
+                <div class="stars">
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <p class="testimonial-text">« En tant que conducteur, je rentre dans mes frais d'essence à chaque trajet. La plateforme est simple, les passagers sont sympas. Je recommande à tous ! »</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">K</div>
+                    <div class="author-info">
+                        <strong>Kofi M.</strong>
+                        <span>Conducteur — Abidjan, Côte d'Ivoire</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="testimonial-card reveal reveal-delay-3">
+                <div class="stars">
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <svg class="star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <p class="testimonial-text">« Le système de vérification des profils m'a vraiment rassurée. J'ai voyagé seule pour la première fois et tout s'est parfaitement passé. Merci Covoit.Africa ! »</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">F</div>
+                    <div class="author-info">
+                        <strong>Fatou B.</strong>
+                        <span>Passagère — Bamako, Mali</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- ===== CTA BANNER ===== -->
+<section class="cta-banner">
+    <div class="container">
+        <div class="cta-banner-inner reveal">
+            <h2>Prêt à prendre la route ?</h2>
+            <p>Rejoignez des milliers de voyageurs africains qui partagent déjà leurs trajets chaque jour.</p>
+            <div class="cta-banner-btns">
                 {% if request.user.is_authenticated %}
-                <a href="{% url 'covoiturage:dashboard' %}">Tableau de bord</a>
-                <a href="{% url 'covoiturage:search_trajets' %}">Voir les trajets</a>
-                <a href="{% url 'covoiturage:profile' %}">Mon profil</a>
+                    <a href="{% url 'covoiturage:add_voyage' %}" class="btn-white">Publier un trajet</a>
+                    <a href="{% url 'covoiturage:search_trajets' %}" class="btn-ghost">Trouver un trajet</a>
                 {% else %}
-                <a href="{% url 'login' %}">Connexion</a>
-                <a href="{% url 'covoiturage:register' %}">Créer un compte</a>
+                    <a href="{% url 'covoiturage:register' %}" class="btn-white">Créer un compte gratuit</a>
+                    <a href="{% url 'covoiturage:search_trajets' %}" class="btn-ghost">Voir les trajets disponibles</a>
                 {% endif %}
             </div>
-            <p class="footer-copy">© 2025 Covoit.Africa</p>
         </div>
-    </footer>
+    </div>
+</section>
 
-    <script>
-        (function() {
-            var nav = document.getElementById('main-nav');
-            if (nav) {
-                function onScroll() {
-                    nav.classList.toggle('scrolled', window.scrollY > 80);
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="{% url 'covoiturage:landing' %}" class="footer-logo">COVOIT<span>.</span>AFRICA</a>
+                <p>L'Afrique en mouvement. Covoiturage simple, sûr et solidaire — de ville en ville, de pays en pays.</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>Plateforme</h4>
+                <ul>
+                    <li><a href="{% url 'covoiturage:search_trajets' %}">Voir les trajets</a></li>
+                    {% if request.user.is_authenticated %}
+                    <li><a href="{% url 'covoiturage:add_voyage' %}">Publier un trajet</a></li>
+                    <li><a href="{% url 'covoiturage:dashboard' %}">Mon tableau de bord</a></li>
+                    <li><a href="{% url 'covoiturage:profile' %}">Mon profil</a></li>
+                    {% else %}
+                    <li><a href="{% url 'covoiturage:register' %}">Créer un compte</a></li>
+                    <li><a href="{% url 'login' %}">Se connecter</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Aide</h4>
+                <ul>
+                    <li><a href="#">Comment ça marche</a></li>
+                    <li><a href="#">Sécurité</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Légal</h4>
+                <ul>
+                    <li><a href="#">Conditions d'utilisation</a></li>
+                    <li><a href="#">Politique de confidentialité</a></li>
+                    <li><a href="#">Cookies</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>© 2025 Covoit.Africa — Tous droits réservés</p>
+            <div class="footer-bottom-links">
+                <a href="#">Mentions légales</a>
+                <a href="#">Confidentialité</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+(function () {
+    'use strict';
+
+    // --- Sticky nav ---
+    var nav = document.getElementById('main-nav');
+    function onScroll() {
+        nav.classList.toggle('scrolled', window.scrollY > 80);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // --- Hamburger menu ---
+    var hamburger = document.getElementById('hamburger');
+    var mobileNav = document.getElementById('mobile-nav');
+    hamburger.addEventListener('click', function () {
+        var isOpen = mobileNav.classList.toggle('open');
+        hamburger.classList.toggle('open', isOpen);
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+    });
+
+    // Close mobile nav on link click
+    mobileNav.querySelectorAll('a, button').forEach(function (el) {
+        el.addEventListener('click', function () {
+            mobileNav.classList.remove('open');
+            hamburger.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+    });
+
+    // --- Scroll-reveal with IntersectionObserver ---
+    var reveals = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
                 }
-                window.addEventListener('scroll', onScroll, { passive: true });
-                onScroll();
+            });
+        }, { threshold: 0.12 });
+        reveals.forEach(function (el) { observer.observe(el); });
+    } else {
+        // Fallback: show all immediately
+        reveals.forEach(function (el) { el.classList.add('visible'); });
+    }
+
+    // --- Animated counters ---
+    function animateCounter(el) {
+        var target = parseInt(el.getAttribute('data-count'), 10);
+        var suffix = el.getAttribute('data-suffix') || '';
+        var duration = 1800;
+        var startTime = null;
+
+        function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            var value = Math.floor(easeOut(progress) * target);
+            el.textContent = value.toLocaleString('fr-FR') + suffix;
+            if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+
+    // Trigger counters when hero stats enter viewport
+    var counterEls = document.querySelectorAll('[data-count]');
+    var counterObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                animateCounter(entry.target);
+                counterObserver.unobserve(entry.target);
             }
-        })();
-    </script>
+        });
+    }, { threshold: 0.5 });
+    counterEls.forEach(function (el) { counterObserver.observe(el); });
+
+})();
+</script>
+
 </body>
 </html>
