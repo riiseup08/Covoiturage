@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="fr">
+{% load i18n %}
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1053,6 +1054,21 @@
     <a href="{% url 'covoiturage:landing' %}" class="nav-logo">COVOIT<span>.</span>AFRICA</a>
 
     <div class="nav-links">
+        <!-- Language Switcher -->
+        <form action="{% url 'set_language' %}" method="post" style="display:inline; margin-right: 15px;">
+            {% csrf_token %}
+            <input name="next" type="hidden" value="{{ request.path }}">
+            <select name="language" onchange="this.form.submit()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; padding: 4px 8px; font-family: 'Outfit'; font-size: 13px; cursor: pointer; outline: none;">
+                {% get_current_language as LANGUAGE_CODE %}
+                {% get_available_languages as LANGUAGES %}
+                {% for lang in LANGUAGES %}
+                    <option value="{{ lang.0 }}" {% if lang.0 == LANGUAGE_CODE %}selected{% endif %}>
+                        {{ lang.1 }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+
         {% if request.user.is_authenticated %}
             <a href="{% url 'covoiturage:search_trajets' %}" class="nav-link">Trajets</a>
             <a href="{% url 'covoiturage:dashboard' %}" class="nav-link">Mon espace</a>

@@ -3,6 +3,9 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from PIL import Image
+from io import BytesIO
+from django.core.files.base import ContentFile
 
 
 class Profile(models.Model):
@@ -42,6 +45,35 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"Profil de {self.user.username}"
+
+    def save(self, *args, **kwargs):
+        # Compress images before saving
+        if self.profile_photo:
+            self.profile_photo = self.compress_image(self.profile_photo)
+        if self.car_photo:
+            self.car_photo = self.compress_image(self.car_photo)
+        if self.id_photo:
+            self.id_photo = self.compress_image(self.id_photo)
+        if self.driver_license_photo:
+            self.driver_license_photo = self.compress_image(self.driver_license_photo)
+        super().save(*args, **kwargs)
+
+    def compress_image(self, image_field):
+        """Compress image to under 200KB for low-data usage."""
+        img = Image.open(image_field)
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        output = BytesIO()
+        # Resize if too large (max 1200px width/height)
+        max_size = (1200, 1200)
+        img.thumbnail(max_size, Image.LANCZOS)
+        
+        # Initial compression at 70% quality
+        img.save(output, format='JPEG', quality=70, optimize=True)
+        output.seek(0)
+        
+        return ContentFile(output.read(), name=image_field.name)
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
