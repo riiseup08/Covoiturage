@@ -1,6 +1,6 @@
-# Covoit.Africa
+# Routa — Le covoiturage africain
 
-Application de covoiturage pour l'Afrique : publiez des trajets, trouvez des passagers ou des conducteurs, validez vos matchs et laissez des avis après le trajet.
+Application de covoiturage pour l'Afrique — anciennement "Covoit.Africa". **Routa** (du français "route") est une plateforme de mobilité connectée : publiez des trajets, trouvez des passagers ou des conducteurs, validez vos matchs et laissez des avis après le trajet.
 
 ## Fonctionnalités
 
