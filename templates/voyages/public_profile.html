@@ -1,0 +1,66 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Profil de {{ profile.user.username }} - Covoit.Africa{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --container-width: 600px; }
+    .profile-card { text-align: center; margin-bottom: 25px; }
+    .profile-card h2 { font-size: 22px; margin-top: 15px; }
+    .rating-info { font-size: 18px; color: #F57C00; font-weight: 700; margin-top: 8px; }
+    .badge-row { margin-top: 10px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .bio-text { color: #555; font-size: 15px; margin-top: 10px; }
+    .reviews-section { margin-top: 30px; }
+    .review-card { background: white; padding: 18px; border-radius: 10px; border: 1px solid #F1EFE9; margin-bottom: 12px; }
+    .review-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .review-author { font-weight: 700; color: var(--color-night); }
+    .review-date { font-size: 13px; color: #999; }
+    .review-trip { font-size: 13px; color: #888; margin-bottom: 6px; }
+    .review-comment { color: #555; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+        <div class="header">
+            <h1>👤 Profil</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+        <div class="card profile-card">
+            {% if profile.profile_photo %}
+                <img src="{{ profile.profile_photo.url }}" alt="Photo" class="profile-photo">
+            {% else %}
+                <div class="profile-photo-placeholder" style="margin: 0 auto;">👤</div>
+            {% endif %}
+            <h2>{{ profile.user.get_full_name|default:profile.user.username }}</h2>
+            {% if note_moyenne %}
+                <p class="rating-info">⭐ {{ note_moyenne|floatformat:1 }}/5 ({{ avis_count }} avis)</p>
+            {% endif %}
+            <div class="badge-row">
+                {% if profile.is_driver %}<span class="badge badge-note">🚗 Conducteur</span>{% endif %}
+                {% if profile.id_verified %}<span class="badge badge-verified">✓ Identité vérifiée</span>{% endif %}
+                {% if profile.phone_verified %}<span class="badge badge-verified">📱 Téléphone vérifié</span>{% endif %}
+                {% if profile.gender == 'female' %}<span class="badge badge-women">👩 Femme</span>{% endif %}
+            </div>
+            {% if profile.bio %}<p class="bio-text">{{ profile.bio }}</p>{% endif %}
+        </div>
+
+        <div class="reviews-section">
+            <h2 class="section-title">⭐ Avis reçus</h2>
+            {% for avis in avis_list %}
+            <div class="review-card">
+                <div class="review-header">
+                    <span class="review-author">{{ avis.auteur.username }} — {{ avis.note }}/5 ⭐</span>
+                    <span class="review-date">{{ avis.created_at|date:"d/m/Y" }}</span>
+                </div>
+                <p class="review-trip">Trajet : {{ avis.voyage.ville_depart }} → {{ avis.voyage.ville_arrivee }}</p>
+                {% if avis.commentaire %}<p class="review-comment">{{ avis.commentaire }}</p>{% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Aucun avis pour le moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+{% endblock %}

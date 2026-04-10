@@ -1,0 +1,121 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Mon profil - Covoit.Africa{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --container-width: 600px; }
+    .photo-upload-label { display: inline-block; margin-top: 10px; padding: 10px 20px; background: var(--color-earth); color: white; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+    .photo-upload-label:hover { background: var(--color-earth-dark); }
+    #id_profile_photo { display: none; }
+    .section-sep { border: none; border-top: 2px solid #EBE5D9; margin: 25px 0 20px; }
+    .section-label { font-size: 16px; font-weight: 700; color: var(--color-night); margin-bottom: 15px; }
+    .safety-section { background: #F3E5F5; border-radius: 8px; padding: 15px 20px; margin-bottom: 20px; }
+    .safety-section h3 { font-size: 15px; color: #7B1FA2; margin-bottom: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+        <div class="header">
+            <h1>👤 Mon profil</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+        <div class="form-container">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="profile-photo-section">
+                    {% if user.profile.profile_photo %}
+                        <img src="{{ user.profile.profile_photo.url }}" alt="Photo de profil" class="profile-photo">
+                    {% else %}
+                        <div class="profile-photo-placeholder">👤</div>
+                    {% endif %}
+                    <br>
+                    <label for="id_profile_photo" class="photo-upload-label">📷 Changer la photo</label>
+                    {{ form.profile_photo }}
+                    {{ form.profile_photo.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_bio">Bio</label>
+                    {{ form.bio }}
+                    {{ form.bio.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_phone">Téléphone</label>
+                    {{ form.phone }}
+                    {{ form.phone.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_whatsapp_number">Numéro WhatsApp</label>
+                    {{ form.whatsapp_number }}
+                    {{ form.whatsapp_number.errors }}
+                </div>
+
+                <hr class="section-sep">
+                <p class="section-label">💰 Mobile Money</p>
+                <div class="form-group">
+                    <label for="id_mobile_money_provider">Opérateur</label>
+                    {{ form.mobile_money_provider }}
+                    {{ form.mobile_money_provider.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_mobile_money_number">Numéro Mobile Money</label>
+                    {{ form.mobile_money_number }}
+                    {{ form.mobile_money_number.errors }}
+                </div>
+
+                <hr class="section-sep">
+                <p class="section-label">🆔 Vérification d'identité</p>
+                <div class="form-group">
+                    <label for="id_id_type">Type de pièce d'identité</label>
+                    {{ form.id_type }}
+                    {{ form.id_type.errors }}
+                </div>
+                <div class="form-group">
+                    <label for="id_id_number">Numéro de la pièce</label>
+                    {{ form.id_number }}
+                    {{ form.id_number.errors }}
+                </div>
+                <div class="form-group">
+                    <label>📄 Photo de la pièce d'identité</label>
+                    {{ form.id_photo }}
+                    {{ form.id_photo.errors }}
+                    {% if user.profile.id_verified %}
+                        <p style="color: #2E7D32; font-weight: 600; margin-top: 5px;">✅ Identité vérifiée</p>
+                    {% elif user.profile.id_photo %}
+                        <p style="color: #F57C00; font-weight: 600; margin-top: 5px;">⏳ Vérification en cours</p>
+                    {% endif %}
+                </div>
+
+                <hr class="section-sep">
+                <div class="safety-section">
+                    <h3>🛡️ Sécurité & Contact d'urgence</h3>
+                    <div class="form-group">
+                        <label for="id_gender">Genre</label>
+                        {{ form.gender }}
+                        {{ form.gender.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_emergency_contact_name">Nom du contact d'urgence</label>
+                        {{ form.emergency_contact_name }}
+                        {{ form.emergency_contact_name.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_emergency_contact_phone">Téléphone du contact d'urgence</label>
+                        {{ form.emergency_contact_phone }}
+                        {{ form.emergency_contact_phone.errors }}
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    {{ form.is_driver }} <label for="id_is_driver" style="margin-bottom: 0;">Je suis conducteur</label>
+                </div>
+
+                <div class="btn-group">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-submit">💾 Enregistrer</button>
+                </div>
+            </form>
+        </div>
+{% endblock %}

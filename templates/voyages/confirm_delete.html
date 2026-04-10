@@ -1,0 +1,30 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Confirmer la suppression - Covoit.Africa{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --container-width: 480px; }
+    .confirm-card { text-align: center; padding: 50px 40px; }
+    .confirm-card .icon { font-size: 48px; margin-bottom: 15px; }
+    .confirm-card h2 { font-size: 22px; margin-bottom: 10px; }
+    .confirm-card p { color: #555; margin-bottom: 30px; }
+    .btn-danger { background: #D32F2F; color: white; border: none; }
+    .btn-danger:hover { background: #B71C1C; }
+</style>
+{% endblock %}
+
+{% block content %}
+        <div class="card confirm-card">
+            <div class="icon">⚠️</div>
+            <h2>Supprimer {% if type == "Trajet" %}ce trajet{% else %}cette demande{% endif %} ?</h2>
+            <p>Cette action est irréversible.</p>
+            <form method="POST" action="{% if type == 'Trajet' %}{% url 'covoiturage:delete_voyage' object.id %}{% else %}{% url 'covoiturage:delete_demande' object.id %}{% endif %}">
+                {% csrf_token %}
+                <div class="btn-group" style="justify-content: center;">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </div>
+            </form>
+        </div>
+{% endblock %}

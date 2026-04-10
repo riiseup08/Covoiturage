@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Covoit.Africa",
+    "slug": "covoit-africa",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FAF6F1"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.covoitafrica.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FAF6F1"
+      },
+      "package": "com.covoitafrica.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

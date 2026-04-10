@@ -1,0 +1,30 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Modifier la demande - Covoit.Africa{% endblock %}
+
+{% block extra_css %}<style>:root { --container-width: 500px; }</style>{% endblock %}
+
+{% block content %}
+        <div class="header">
+            <h1>✏️ Modifier la demande</h1>
+            <div class="nav-links"><a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a></div>
+        </div>
+
+        {% if form.errors %}
+        <div class="error-box"><ul>{% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}</ul></div>
+        {% endif %}
+
+        <div class="form-container">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group"><label>Ville de départ</label>{{ form.ville_depart }}</div>
+                <div class="form-group"><label>Ville d'arrivée</label>{{ form.ville_arrivee }}</div>
+                <div class="form-group"><label>Date de voyage</label>{{ form.date_voyage }}</div>
+                <div class="form-group"><label>Nombre de places</label>{{ form.places }}</div>
+                <div class="btn-group">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-submit">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+{% endblock %}

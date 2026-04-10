@@ -1,0 +1,48 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Modifier le trajet - Covoit.Africa{% endblock %}
+
+{% block extra_css %}<style>:root { --container-width: 600px; }</style>{% endblock %}
+
+{% block content %}
+        <div class="header">
+            <h1>✏️ Modifier le trajet</h1>
+            <div class="nav-links"><a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a></div>
+        </div>
+
+        {% if form.errors %}
+        <div class="error-box"><ul>{% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}</ul></div>
+        {% endif %}
+
+        <div class="form-container">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group"><label>Ville de départ</label>{{ form.ville_depart }}</div>
+                    <div class="form-group"><label>Lieu de ramassage</label>{{ form.lieu_ramassage }}</div>
+                </div>
+                <div class="form-group"><label>Ville d'arrivée</label>{{ form.ville_arrivee }}</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Date de départ</label>{{ form.date_depart }}</div>
+                    <div class="form-group"><label>Date d'arrivée</label>{{ form.date_arrivee }}</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Places</label>{{ form.places_disponibles }}</div>
+                    <div class="form-group"><label>Prix</label>{{ form.prix_par_place }}</div>
+                    <div class="form-group"><label>Devise</label>{{ form.currency }}</div>
+                </div>
+                <div class="checkbox-group" style="margin-bottom:10px;">{{ form.accept_mobile_money }} <label for="id_accept_mobile_money" style="margin-bottom:0;">Mobile Money</label></div>
+                <div class="checkbox-group" style="margin-bottom:10px;">{{ form.accept_cash }} <label for="id_accept_cash" style="margin-bottom:0;">Espèces</label></div>
+                {% if is_female %}<div class="checkbox-group" style="margin-bottom:20px;">{{ form.women_only }} <label for="id_women_only" style="margin-bottom:0;">👩 Femmes uniquement</label></div>{% endif %}
+                <div class="form-row">
+                    <div class="form-group"><label>Plaque</label>{{ form.plaque_immatriculation }}</div>
+                    <div class="form-group"><label>Véhicule</label>{{ form.modele_voiture }}</div>
+                </div>
+                <div class="form-group"><label>Bagage accepté</label>{{ form.type_bagage_accepte }}</div>
+                <div class="btn-group">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-submit">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+{% endblock %}

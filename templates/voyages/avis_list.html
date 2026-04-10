@@ -1,0 +1,27 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Laisser un avis - Covoit.Africa{% endblock %}
+
+{% block extra_css %}<style>:root { --container-width: 800px; }</style>{% endblock %}
+
+{% block content %}
+        <div class="header">
+            <h1>⭐ Avis à laisser</h1>
+            <div class="nav-links"><a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a></div>
+        </div>
+        <div class="grid" style="grid-template-columns: 1fr;">
+            {% for item in avis_a_donner %}
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h3 style="margin-bottom: 8px;">{{ item.voyage.ville_depart }} ➔ {{ item.voyage.ville_arrivee }}</h3>
+                    <p style="margin: 0;">👤 {{ item.other_user.username }} · {{ item.voyage.date_depart|date:"d/m/Y" }}</p>
+                </div>
+                <a href="{% url 'covoiturage:add_avis' item.voyage.id item.other_user.id %}" class="btn btn-submit" style="padding: 10px 20px; font-size: 14px;">Noter</a>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <p>Aucun avis à laisser pour le moment. Terminez un trajet d'abord ! 🚗</p>
+            </div>
+            {% endfor %}
+        </div>
+{% endblock %}

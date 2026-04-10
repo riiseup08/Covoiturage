@@ -1,0 +1,59 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Inscription - Covoit.Africa{% endblock %}
+
+{% block body_attrs %}style="margin: 0; padding: 0;"{% endblock %}
+
+{% block extra_css %}
+<style>
+    .split { display: flex; min-height: 100vh; }
+    .split-left { flex: 1; background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=900') center/cover no-repeat; position: relative; }
+    .split-left .overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(26,26,26,0.85), rgba(217,93,57,0.6)); display: flex; flex-direction: column; justify-content: center; padding: 60px; color: white; }
+    .split-left .overlay h2 { font-size: 36px; font-weight: 900; margin-bottom: 15px; }
+    .split-left .overlay p { font-size: 18px; opacity: 0.9; line-height: 1.6; }
+    .split-right { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; background: var(--color-bg); }
+    .register-form { width: 100%; max-width: 440px; }
+    .register-form h1 { margin-bottom: 8px; }
+    .register-form .subtitle { color: #888; font-size: 15px; margin-bottom: 25px; }
+    .login-link { text-align: center; margin-top: 20px; font-size: 14px; color: #888; }
+    .login-link a { color: var(--color-earth); font-weight: 600; text-decoration: none; }
+    .register-form p { margin-bottom: 15px; }
+    .register-form p label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+    .register-form p input { width: 100%; padding: 14px; border: 2px solid #EBE5D9; border-radius: 8px; font-size: 16px; font-family: 'Outfit'; }
+    .register-form p input:focus { outline: none; border-color: var(--color-earth); }
+    .register-form .helptext { font-size: 12px; color: #999; margin-top: 4px; }
+    .register-form .helptext ul { padding-left: 16px; }
+    @media (max-width: 768px) {
+        .split-left { display: none; }
+        .split-right { padding: 30px 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+    <div class="split">
+        <div class="split-left">
+            <div class="overlay">
+                <h2>Covoit.<span style="color: var(--color-sun);">Africa</span></h2>
+                <p>Rejoignez le mouvement du covoiturage en Afrique. Créez votre compte et commencez à voyager.</p>
+            </div>
+        </div>
+        <div class="split-right">
+            <div class="register-form">
+                <h1>📝 Créer un compte</h1>
+                <p class="subtitle">Inscription avec mot de passe</p>
+                {% if form.errors %}
+                <div class="error-box">
+                    <ul>{% for field, errors in form.errors.items %}{% for error in errors %}<li>{{ error }}</li>{% endfor %}{% endfor %}</ul>
+                </div>
+                {% endif %}
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-submit" style="width: 100%;">Créer mon compte</button>
+                </form>
+                <p class="login-link">Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a> · <a href="{% url 'covoiturage:phone_register' %}">Inscription par téléphone</a></p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

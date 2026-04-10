@@ -1,0 +1,87 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Notifications - Covoit.Africa{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --container-width: 800px; }
+    .notif-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 10px; }
+    .notif-header h1 .count { background: #D32F2F; color: white; font-size: 14px; padding: 3px 10px; border-radius: 20px; margin-left: 8px; vertical-align: middle; }
+    .notif-item { display: flex; gap: 15px; padding: 18px; background: white; border-radius: 10px; margin-bottom: 10px; border: 1px solid #F1EFE9; transition: 0.2s; }
+    .notif-item.unread { border-left: 4px solid var(--color-earth); background: #FFF9F5; }
+    .notif-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .notif-icon.match { background: #E3F2FD; }
+    .notif-icon.validated { background: #E8F5E9; }
+    .notif-icon.refused { background: #FDECEA; }
+    .notif-icon.review { background: #FFF8E1; }
+    .notif-icon.reminder { background: #F3E5F5; }
+    .notif-icon.completed { background: #E0F7FA; }
+    .notif-icon.message { background: #EDE7F6; }
+    .notif-body { flex: 1; }
+    .notif-title { font-weight: 700; font-size: 15px; color: var(--color-night); }
+    .notif-time { font-size: 13px; color: #999; margin-left: 8px; }
+    .notif-msg { font-size: 14px; color: #555; margin-top: 4px; }
+    .notif-actions { margin-top: 6px; }
+    .notif-actions a { font-size: 13px; color: var(--color-earth); font-weight: 600; text-decoration: none; margin-right: 12px; }
+    .notif-actions a:hover { text-decoration: underline; }
+    .btn-mark-all { padding: 10px 20px; background: #F1EFE9; color: var(--color-night); border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Outfit'; font-size: 14px; text-decoration: none; }
+    .btn-mark-all:hover { background: #E2DFD6; }
+</style>
+{% endblock %}
+
+{% block content %}
+        <div class="notif-header">
+            <h1>🔔 Notifications{% if unread_count > 0 %}<span class="count">{{ unread_count }}</span>{% endif %}</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                {% if unread_count > 0 %}
+                <form method="POST" action="{% url 'covoiturage:notifications_mark_all_read' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-mark-all">Tout marquer comme lu</button>
+                </form>
+                {% endif %}
+                <a href="{% url 'covoiturage:dashboard' %}" class="btn-mark-all">← Tableau de bord</a>
+            </div>
+        </div>
+
+        {% for notif in notifications %}
+        <div class="notif-item {% if not notif.is_read %}unread{% endif %}">
+            <div class="notif-icon {{ notif.notification_type }}">{{ notif.icon }}</div>
+            <div class="notif-body">
+                <span class="notif-title">{{ notif.title }}</span>
+                <span class="notif-time">il y a {{ notif.created_at|timesince }}</span>
+                <p class="notif-msg">{{ notif.message }}</p>
+                <div class="notif-actions">
+                    {% if notif.related_voyage %}
+                    <a href="{% url 'covoiturage:dashboard' %}#trajets">Voir le trajet</a>
+                    {% endif %}
+                    {% if notif.related_avis %}
+                    <a href="{% url 'covoiturage:public_profile' request.user.username %}">Voir mes avis</a>
+                    {% endif %}
+                    {% if not notif.is_read %}
+                    <form method="POST" action="{% url 'covoiturage:notifications_mark_read' notif.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" style="background: none; border: none; color: var(--color-earth); font-weight: 600; font-size: 13px; cursor: pointer; font-family: 'Outfit'; padding: 0;">Marquer comme lu</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <p style="font-size: 40px; margin-bottom: 10px;">🔕</p>
+            <p>Aucune notification pour le moment.</p>
+        </div>
+        {% endfor %}
+
+        {% if notifications.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if notifications.has_previous %}
+            <a href="?page={{ notifications.previous_page_number }}">‹ Préc.</a>
+            {% endif %}
+            <span class="current">Page {{ notifications.number }}/{{ notifications.paginator.num_pages }}</span>
+            {% if notifications.has_next %}
+            <a href="?page={{ notifications.next_page_number }}">Suiv. ›</a>
+            {% endif %}
+        </div>
+        {% endif %}
+{% endblock %}

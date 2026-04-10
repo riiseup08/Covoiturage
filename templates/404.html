@@ -1,0 +1,11 @@
+﻿{% extends "base.html" %}
+{% block title %}Page non trouvée - Covoit.Africa{% endblock %}
+{% block body_attrs %}style="padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: 100vh;"{% endblock %}
+{% block extra_css %}<style>:root { --container-width: 400px; } .error-card { padding: 50px 40px; text-align: center; } .error-code { font-size: 80px; font-weight: 900; color: var(--color-earth); line-height: 1; } .error-card p { color: #555; margin: 15px 0 25px; }</style>{% endblock %}
+{% block content %}
+        <div class="form-container error-card">
+            <div class="error-code">404</div>
+            <p>Cette page n'existe pas ou a été déplacée.</p>
+            <a href="{% url 'covoiturage:landing' %}" class="btn btn-submit" style="display: inline-block; text-decoration: none;">← Retour à l'accueil</a>
+        </div>
+{% endblock %}

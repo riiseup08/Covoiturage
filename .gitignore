@@ -1,0 +1,30 @@
+# Dependencies
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+
+# Build outputs
+mobile/web-build/
+*.apk
+*.ipa
+
+# Environment & secrets
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+*.log

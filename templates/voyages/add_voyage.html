@@ -1,0 +1,169 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Publier un trajet - Covoit.Africa{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --container-width: 850px; }
+    .separator { border: none; border-top: 2px solid #EBE5D9; margin: 25px 0 20px; }
+    .section-label { font-size: 16px; font-weight: 700; color: var(--color-night); margin-bottom: 15px; }
+</style>
+{% endblock %}
+
+{% block content %}
+        <div class="header">
+            <h1>🚗 Publier un trajet</h1>
+            <div class="nav-links">
+                <a href="{% url 'covoiturage:dashboard' %}">← Tableau de bord</a>
+            </div>
+        </div>
+
+        {% if form.errors %}
+        <div class="error-box">
+            <ul>
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="form-container">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="id_pays_depart">Pays de départ</label>
+                    <select id="id_pays_depart" onchange="updateVilles('id_pays_depart','id_ville_depart')">
+                        <option value="">-- Sélectionner un pays --</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_ville_depart">Ville de départ</label>
+                        {{ form.ville_depart }}
+                        <datalist id="list_ville_depart"></datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_lieu_ramassage">Lieu de ramassage</label>
+                        {{ form.lieu_ramassage }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_pays_arrivee">Pays d'arrivée</label>
+                    <select id="id_pays_arrivee" onchange="updateVilles('id_pays_arrivee','id_ville_arrivee')">
+                        <option value="">-- Sélectionner un pays --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="id_ville_arrivee">Ville d'arrivée</label>
+                    {{ form.ville_arrivee }}
+                    <datalist id="list_ville_arrivee"></datalist>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_date_depart">Date et heure de départ</label>
+                        {{ form.date_depart }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_date_arrivee">Date et heure d'arrivée</label>
+                        {{ form.date_arrivee }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_places_disponibles">Places disponibles</label>
+                        {{ form.places_disponibles }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_prix_par_place">Prix par place</label>
+                        {{ form.prix_par_place }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_currency">Devise</label>
+                        {{ form.currency }}
+                    </div>
+                </div>
+
+                <div class="checkbox-group" style="margin-bottom: 10px;">
+                    {{ form.accept_mobile_money }} <label for="id_accept_mobile_money" style="margin-bottom:0;">Accepter Mobile Money</label>
+                </div>
+                <div class="checkbox-group" style="margin-bottom: 10px;">
+                    {{ form.accept_cash }} <label for="id_accept_cash" style="margin-bottom:0;">Accepter les espèces</label>
+                </div>
+                {% if is_female %}
+                <div class="checkbox-group" style="margin-bottom: 20px;">
+                    {{ form.women_only }} <label for="id_women_only" style="margin-bottom:0;">👩 Trajet réservé aux femmes</label>
+                </div>
+                {% endif %}
+
+                <hr class="separator">
+                <p class="section-label">🚗 Véhicule & Bagages</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="id_plaque_immatriculation">Plaque d'immatriculation</label>
+                        {{ form.plaque_immatriculation }}
+                    </div>
+                    <div class="form-group">
+                        <label for="id_modele_voiture">Modèle du véhicule</label>
+                        {{ form.modele_voiture }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="id_type_bagage_accepte">Type de bagage accepté</label>
+                    {{ form.type_bagage_accepte }}
+                </div>
+
+                <div class="btn-group">
+                    <a href="{% url 'covoiturage:dashboard' %}" class="btn btn-cancel">Annuler</a>
+                    <button type="submit" class="btn btn-submit">Publier le trajet</button>
+                </div>
+            </form>
+        </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dataAfrique = {
+    "Cameroun": ["Douala","Yaoundé","Bafoussam","Bamenda","Garoua","Maroua","Bertoua","Kribi","Limbé","Buéa","Ngaoundéré","Ebolowa","Kumba","Nkongsamba","Dschang","Foumban","Loum","Edéa","Sangmélima","Tiko"],
+    "Sénégal": ["Dakar","Thiès","Saint-Louis","Kaolack","Ziguinchor","Touba","Rufisque","Mbour","Diourbel"],
+    "Côte d'Ivoire": ["Abidjan","Bouaké","Yamoussoukro","Daloa","San Pedro","Korhogo","Man","Gagnoa"],
+    "Gabon": ["Libreville","Port-Gentil","Franceville","Oyem","Moanda","Lambaréné"],
+    "Congo": ["Brazzaville","Pointe-Noire","Dolisie","Nkayi","Owando"],
+    "RDC": ["Kinshasa","Lubumbashi","Mbuji-Mayi","Kisangani","Goma","Bukavu","Kananga"],
+    "Mali": ["Bamako","Sikasso","Mopti","Ségou","Koutiala","Kayes"],
+    "Burkina Faso": ["Ouagadougou","Bobo-Dioulasso","Koudougou","Banfora","Ouahigouya"],
+    "Guinée": ["Conakry","Nzérékoré","Kankan","Kindia","Labé"],
+    "Togo": ["Lomé","Sokodé","Kara","Kpalimé","Atakpamé"],
+    "Bénin": ["Cotonou","Porto-Novo","Parakou","Djougou","Abomey-Calavi"]
+};
+function populateCountries(selectId) {
+    const sel = document.getElementById(selectId);
+    Object.keys(dataAfrique).forEach(function(pays) {
+        const opt = document.createElement('option');
+        opt.value = pays; opt.textContent = pays;
+        sel.appendChild(opt);
+    });
+}
+function updateVilles(countryId, cityId) {
+    const pays = document.getElementById(countryId).value;
+    const cityInput = document.getElementById(cityId);
+    const listId = 'list_' + cityId;
+    const datalist = document.getElementById(listId);
+    if (datalist) { datalist.innerHTML = ''; }
+    if (pays && dataAfrique[pays]) {
+        cityInput.removeAttribute('disabled');
+        if (datalist) {
+            dataAfrique[pays].forEach(function(v) {
+                const opt = document.createElement('option');
+                opt.value = v; datalist.appendChild(opt);
+            });
+        }
+        cityInput.setAttribute('list', listId);
+    }
+}
+populateCountries('id_pays_depart');
+populateCountries('id_pays_arrivee');
+</script>
+{% endblock %}
