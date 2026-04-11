@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Radius, Spacing } from '../theme';
 import Card from './Card';
+import { useI18n } from '../i18n';
+import { formatCurrency, currencyLabel } from '../utils/currency';
 
 /**
  * @typedef {object} Trip
@@ -27,6 +29,7 @@ import Card from './Card';
  * @param {boolean} [props.showDriver=true] - Show driver info row
  */
 export default function TripCard({ trip, onPress, showDriver = true }) {
+  const { t } = useI18n();
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -51,8 +54,8 @@ export default function TripCard({ trip, onPress, showDriver = true }) {
             <Text style={styles.city}>{trip.ville_arrivee}</Text>
           </View>
           <View style={styles.priceBox}>
-            <Text style={styles.price}>{trip.prix_par_place}</Text>
-            <Text style={styles.currency}>{trip.currency}</Text>
+            <Text style={styles.price}>{formatCurrency(trip.prix_par_place, trip.currency)}</Text>
+            <Text style={styles.currency}>{currencyLabel(trip.currency)}</Text>
           </View>
         </View>
 
@@ -63,11 +66,11 @@ export default function TripCard({ trip, onPress, showDriver = true }) {
           </View>
           <View style={styles.detailItem}>
             <Ionicons name="person-outline" size={14} color={Colors.textLight} />
-            <Text style={styles.detailText}>{trip.places_disponibles} place(s)</Text>
+            <Text style={styles.detailText}>{trip.places_disponibles} {t('places')}</Text>
           </View>
           {trip.women_only && (
             <View style={[styles.badge, { backgroundColor: Colors.female + '20' }]}>
-              <Text style={[styles.badgeText, { color: Colors.female }]}>👩 Femmes</Text>
+              <Text style={[styles.badgeText, { color: Colors.female }]}>👩 {t('womenOnly')}</Text>
             </View>
           )}
         </View>
@@ -83,12 +86,12 @@ export default function TripCard({ trip, onPress, showDriver = true }) {
         <View style={styles.paymentRow}>
           {trip.accept_mobile_money && (
             <View style={styles.payBadge}>
-              <Text style={styles.payText}>📱 Mobile Money</Text>
+              <Text style={styles.payText}>📱 {t('mobileMoneyLabel')}</Text>
             </View>
           )}
           {trip.accept_cash && (
             <View style={styles.payBadge}>
-              <Text style={styles.payText}>💵 Espèces</Text>
+              <Text style={styles.payText}>💵 {t('payByCash')}</Text>
             </View>
           )}
         </View>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Colors, Spacing, Radius } from '../theme';
 import Input from '../components/Input';
@@ -11,17 +11,28 @@ export default function PhoneLoginScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [cooldown, setCooldown] = useState(0);
+  const cooldownRef = useRef(null);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      cooldownRef.current = setTimeout(() => setCooldown(c => c - 1), 1000);
+    }
+    return () => clearTimeout(cooldownRef.current);
+  }, [cooldown]);
 
   const handleSendOtp = async () => {
-    const cleaned = phone.trim();
-    if (!cleaned) {
-      setError(t('phoneInvalid'));
+    const cleaned = phone.trim().replace(/\s+/g, '');
+    const phoneRegex = /^(\+?237)?[26]\d{7,8}$/;
+    if (!cleaned || !phoneRegex.test(cleaned)) {
+      setError(t('phoneFormatInvalid'));
       return;
     }
     setLoading(true);
     setError('');
     try {
       const data = await auth.phoneRequestOtp(cleaned);
+      setCooldown(60);
       navigation.navigate('PhoneVerify', { phone: data.phone });
     } catch (e) {
       setError(e.message || t('error'));
@@ -36,7 +47,7 @@ export default function PhoneLoginScreen({ navigation }) {
         <View style={styles.header}>
           <Text style={styles.logo}>📱</Text>
           <Text style={styles.title}>{t('phoneLogin')}</Text>
-          <Text style={styles.subtitle}>Cameroun (+237)</Text>
+          <Text style={styles.subtitle}>{t('countryLabel')}</Text>
         </View>
 
         <View style={styles.form}>
@@ -51,11 +62,11 @@ export default function PhoneLoginScreen({ navigation }) {
             autoCapitalize="none"
           />
 
-          <Button title={t('sendCode')} onPress={handleSendOtp} loading={loading} />
+          <Button title={cooldown > 0 ? `${t('sendCode')} (${cooldown}s)` : t('sendCode')} onPress={handleSendOtp} loading={loading} disabled={cooldown > 0} />
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou</Text>
+            <Text style={styles.dividerText}>{t('or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 

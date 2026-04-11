@@ -7,28 +7,24 @@ import Button from '../components/Button';
 import { voyages } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import { formatCurrency } from '../utils/currency';
 
-const CURRENCY_OPTIONS = [
-  { value: 'XAF', label: 'FCFA (Afrique Centrale)' },
-  { value: 'XOF', label: 'FCFA (Afrique Ouest)' },
-  { value: 'NGN', label: 'Naira' },
-  { value: 'GHS', label: 'Cedi' },
-  { value: 'KES', label: 'Shilling' },
-  { value: 'ZAR', label: 'Rand' },
-  { value: 'MAD', label: 'Dirham' },
-];
-
-const BAGAGE_OPTIONS = [
-  { value: 'petit', label: 'Petit (sac à main)' },
-  { value: 'moyen', label: 'Moyen (valise cabine)' },
-  { value: 'gros', label: 'Gros (valises)' },
-  { value: 'tous', label: 'Tous types' },
-];
+const CURRENCY_VALUES = ['XAF', 'XOF', 'NGN', 'GHS', 'KES', 'ZAR', 'MAD'];
+const BAGAGE_VALUES = ['petit', 'moyen', 'gros', 'tous'];
 
 export default function AddTripScreen({ navigation }) {
   const { t } = useI18n();
   const { profileData } = useAuth();
   const isFemale = profileData?.gender === 'female';
+
+  const currencyLabels = {
+    XAF: t('currencyXAF'), XOF: t('currencyXOF'), NGN: t('currencyNGN'),
+    GHS: t('currencyGHS'), KES: t('currencyKES'), ZAR: t('currencyZAR'), MAD: t('currencyMAD'),
+  };
+  const baggageLabels = {
+    petit: t('baggageSmall'), moyen: t('baggageMedium'),
+    gros: t('baggageLarge'), tous: t('baggageAll'),
+  };
 
   const [form, setForm] = useState({
     ville_depart: '',
@@ -93,13 +89,13 @@ export default function AddTripScreen({ navigation }) {
 
           <Text style={styles.pickerLabel}>{t('currency')}</Text>
           <View style={styles.chipRow}>
-            {CURRENCY_OPTIONS.map(c => (
+            {CURRENCY_VALUES.map(c => (
               <Text
-                key={c.value}
-                style={[styles.chip, form.currency === c.value && styles.chipActive]}
-                onPress={() => update('currency', c.value)}
+                key={c}
+                style={[styles.chip, form.currency === c && styles.chipActive]}
+                onPress={() => update('currency', c)}
               >
-                {c.label}
+                {currencyLabels[c]}
               </Text>
             ))}
           </View>
@@ -117,13 +113,13 @@ export default function AddTripScreen({ navigation }) {
 
           <Text style={styles.pickerLabel}>{t('acceptedBaggage')}</Text>
           <View style={styles.chipRow}>
-            {BAGAGE_OPTIONS.map(b => (
+            {BAGAGE_VALUES.map(b => (
               <Text
-                key={b.value}
-                style={[styles.chip, form.type_bagage_accepte === b.value && styles.chipActive]}
-                onPress={() => update('type_bagage_accepte', b.value)}
+                key={b}
+                style={[styles.chip, form.type_bagage_accepte === b && styles.chipActive]}
+                onPress={() => update('type_bagage_accepte', b)}
               >
-                {b.label}
+                {baggageLabels[b]}
               </Text>
             ))}
           </View>

@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import { wallet as walletApi } from '../api/client';
 import { Colors, Spacing, Radius } from '../theme';
+import { formatCurrency } from '../utils/currency';
 
 export default function WalletScreen() {
   const { user } = useAuth();
@@ -54,7 +55,7 @@ export default function WalletScreen() {
     try {
       Alert.alert(
         t('confirmTopup'),
-        `${topupAmount} XAF`,
+        `${formatCurrency(topupAmount, walletData?.currency || 'XAF')}`,
         [
           { text: t('cancel'), onPress: () => {} },
           {
@@ -88,8 +89,7 @@ export default function WalletScreen() {
       <View style={[styles.balanceCard, walletData.low_balance && styles.lowBalanceCard]}>
         <Text style={styles.balanceLabel}>{t('walletBalance')}</Text>
         <View style={styles.balanceRow}>
-          <Text style={styles.balanceAmount}>{walletData.balance}</Text>
-          <Text style={styles.currencyText}>{walletData.currency}</Text>
+          <Text style={styles.balanceAmount}>{formatCurrency(walletData.balance, walletData.currency)}</Text>
         </View>
 
         {walletData.low_balance && (
@@ -130,7 +130,7 @@ export default function WalletScreen() {
                     topupAmount === amount && styles.quickAmountTextActive,
                   ]}
                 >
-                  {amount}
+                  {formatCurrency(amount, walletData?.currency || 'XAF')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -138,7 +138,7 @@ export default function WalletScreen() {
 
           <TouchableOpacity style={styles.confirmButton} onPress={handleRequestTopup}>
             <Text style={styles.confirmButtonText}>
-              {t('topUp')} {topupAmount} XAF
+              {t('topUp')} {formatCurrency(topupAmount, walletData?.currency || 'XAF')}
             </Text>
           </TouchableOpacity>
 
@@ -188,7 +188,7 @@ export default function WalletScreen() {
                 ]}
               >
                 {transaction.transaction_type === 'topup' ? '+' : '-'}
-                {transaction.amount}
+                {formatCurrency(transaction.amount, walletData?.currency || 'XAF')}
               </Text>
             </View>
           ))}

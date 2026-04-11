@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ENV from '../config/env';
 import logger from './logger';
 
 const CACHE_PREFIX = '@covoit_cache_';
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const CACHE_TTL = ENV.CACHE_TTL_MS;
 
 export async function getCached(key) {
   try {

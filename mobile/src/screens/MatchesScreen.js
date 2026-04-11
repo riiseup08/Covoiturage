@@ -8,6 +8,7 @@ import Button from '../components/Button';
 import { matches as matchApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import { formatCurrency } from '../utils/currency';
 import { fetchWithCache } from '../utils/offline';
 
 export default function MatchesScreen({ navigation }) {
@@ -70,7 +71,7 @@ export default function MatchesScreen({ navigation }) {
 
         <View style={styles.matchDetails}>
           <Text style={styles.detailText}>Score: {Math.round(item.score_match * 100)}%</Text>
-          <Text style={styles.detailText}>{item.voyage?.prix_par_place} {item.voyage?.currency}</Text>
+          <Text style={styles.detailText}>{formatCurrency(item.voyage?.prix_par_place, item.voyage?.currency)}</Text>
         </View>
 
         {status === 'pending' && isDriver && (

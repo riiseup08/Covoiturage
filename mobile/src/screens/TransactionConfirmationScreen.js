@@ -13,6 +13,8 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
+import { formatCurrency } from '../utils/currency';
+import { payments } from '../api/client';
 
 /**
  * Transaction Confirmation Screen - Crystal clear payment breakdown
@@ -48,22 +50,29 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
     setLoading(true);
     try {
       Alert.alert(
-        t('confirmPayment', 'Confirm Payment'),
-        `💰 You are about to pay ${amount} XAF for the trip.\n\n${tripFrom} → ${tripTo}\n\nThis will be deducted ${
-          method === 'cash' ? 'now in cash' : 'via ' + provider
-        }.`,
+        t('confirmPayment'),
+        `💰 ${t('paying')} ${formatCurrency(amount, 'XAF')}\n\n${tripFrom} → ${tripTo}\n\n${method === 'cash' ? t('cashPaymentLabel') : provider}`,
         [
           { text: t('cancel'), onPress: () => setLoading(false) },
           {
             text: t('confirm'),
             onPress: async () => {
-              // Call payment API
-              // await client.payments.create({...})
-              Alert.alert(
-                t('success', 'Success'),
-                t('paymentSuccess', 'Payment confirmed! Trip is ready to go.')
-              );
-              setTimeout(() => navigation.goBack(), 1500);
+              try {
+                await payments.create({
+                  correspondance_id: correspondance.id,
+                  method,
+                  provider: method === 'mobile_money' ? provider : 'cash',
+                  amount,
+                });
+                Alert.alert(
+                  t('success'),
+                  t('paymentSuccess')
+                );
+                setTimeout(() => navigation.goBack(), 1500);
+              } catch (err) {
+                setLoading(false);
+                Alert.alert(t('error'), err.message || t('actionFailed'));
+              }
             },
           },
         ]
@@ -80,13 +89,13 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
       {/* Header: Title + Status */}
       <View style={styles.header}>
         <MaterialCommunityIcons name="check-circle-outline" size={48} color="#34C759" />
-        <Text style={styles.headerTitle}>{t('reviewTransaction', 'Review Your Payment')}</Text>
-        <Text style={styles.headerSubtitle}>Ensure all details are correct</Text>
+        <Text style={styles.headerTitle}>{t('reviewTransaction')}</Text>
+        <Text style={styles.headerSubtitle}>{t('ensureDetailsCorrect')}</Text>
       </View>
 
       {/* SECTION 1: TRIP DETAILS */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>🚗 TRIP DETAILS</Text>
+        <Text style={styles.sectionLabel}>{t('tripDetailsSection')}</Text>
         <View style={styles.tripCard}>
           <View style={styles.tripRoute}>
             <View style={styles.routePoint}>
@@ -102,12 +111,12 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
 
           <View style={styles.tripMeta}>
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Date</Text>
+              <Text style={styles.metaLabel}>{t('date')}</Text>
               <Text style={styles.metaValue}>{new Date(voyage.date_depart).toLocaleDateString('fr-FR')}</Text>
             </View>
             <View style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Seats</Text>
-              <Text style={styles.metaValue}>{demande.places} place(s)</Text>
+              <Text style={styles.metaLabel}>{t('seats')}</Text>
+              <Text style={styles.metaValue}>{demande.places} {t('places')}</Text>
             </View>
           </View>
         </View>
@@ -115,7 +124,7 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
 
       {/* SECTION 2: PEOPLE INVOLVED */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>👥 PAYMENT FLOW</Text>
+        <Text style={styles.sectionLabel}>{t('paymentFlowSection')}</Text>
 
         {/* PASSENGER (YOU) - PAYING */}
         <View style={[styles.personCard, styles.passengerCard]}>
@@ -124,20 +133,20 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
               <MaterialCommunityIcons name="account" size={20} color="#FFF" />
             </View>
             <View style={styles.personInfo}>
-              <Text style={styles.personLabel}>YOU (Passenger)</Text>
-              <Text style={styles.personName}>Paying the trip</Text>
+              <Text style={styles.personLabel}>{t('youPassenger')}</Text>
+              <Text style={styles.personName}>{t('payingTrip')}</Text>
             </View>
           </View>
           <View style={styles.personAction}>
             <MaterialCommunityIcons name="cash-remove" size={32} color="#FF3B30" />
-            <Text style={styles.actionText}>Paying {amount} XAF</Text>
+            <Text style={styles.actionText}>{t('paying')} {formatCurrency(amount, 'XAF')}</Text>
           </View>
         </View>
 
         {/* Arrow */}
         <View style={styles.arrowContainer}>
           <MaterialCommunityIcons name="arrow-down" size={32} color="#999" />
-          <Text style={styles.arrowLabel}>{method === 'cash' ? 'Cash Payment' : 'Mobile Money'}</Text>
+          <Text style={styles.arrowLabel}>{method === 'cash' ? t('cashPaymentLabel') : t('mobileMoneyLabel')}</Text>
         </View>
 
         {/* DRIVER (RECEIVER) - RECEIVING */}
@@ -147,13 +156,13 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
               <MaterialCommunityIcons name="steering" size={20} color="#FFF" />
             </View>
             <View style={styles.personInfo}>
-              <Text style={styles.personLabel}>DRIVER</Text>
+              <Text style={styles.personLabel}>{t('driverLabel')}</Text>
               <Text style={styles.personName}>{driver}</Text>
             </View>
           </View>
           <View style={styles.personAction}>
             <MaterialCommunityIcons name="cash-check" size={32} color="#34C759" />
-            <Text style={styles.actionText}>Receives {amount} XAF</Text>
+            <Text style={styles.actionText}>{t('receives')} {formatCurrency(amount, 'XAF')}</Text>
           </View>
         </View>
       </View>
@@ -165,7 +174,7 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
           <View style={styles.methodRow}>
             <Text style={styles.methodLabel}>Method:</Text>
             <Text style={styles.methodValue}>
-              {method === 'cash' ? '💵 Cash' : '📱 Mobile Money'}
+              {method === 'cash' ? `💵 ${t('cashPaymentLabel')}` : `📱 ${t('mobileMoneyLabel')}`}
             </Text>
           </View>
           {method === 'mobile_money' && (
@@ -176,7 +185,7 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
           )}
           <View style={styles.methodRow}>
             <Text style={styles.methodLabel}>Amount:</Text>
-            <Text style={styles.methodValue}>{amount} XAF</Text>
+            <Text style={styles.methodValue}>{formatCurrency(amount, 'XAF')}</Text>
           </View>
           <View style={styles.methodRow}>
             <Text style={styles.methodLabel}>Status:</Text>
@@ -203,7 +212,7 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
 
         <View style={[styles.noteBox, styles.noteBoxWarning]}>
           <Text style={styles.noteTitle}>Before confirming:</Text>
-          <Text style={styles.noteText}>✓ Trip details are correct ✓ Payment method is ready ✓ You have {amount} XAF</Text>
+          <Text style={styles.noteText}>✓ {t('ensureDetailsCorrect')} ✓ {formatCurrency(amount, 'XAF')}</Text>
         </View>
       </View>
 
@@ -227,7 +236,7 @@ export default function TransactionConfirmationScreen({ route, navigation }) {
           ) : (
             <>
               <MaterialCommunityIcons name="check" size={20} color="#FFF" />
-              <Text style={styles.confirmButtonText}>Confirm & Pay {amount} XAF</Text>
+              <Text style={styles.confirmButtonText}>{t('confirm')} {formatCurrency(amount, 'XAF')}</Text>
             </>
           )}
         </TouchableOpacity>

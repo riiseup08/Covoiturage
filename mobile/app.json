@@ -3,10 +3,16 @@
     "name": "Covoit.Africa",
     "slug": "covoit-africa",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "scheme": "covoitafrica",
     "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
       "backgroundColor": "#FAF6F1"
     },
     "assetBundlePatterns": [
@@ -14,16 +20,36 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.covoitafrica.app"
+      "bundleIdentifier": "com.covoitafrica.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Covoit.Africa uses your location to find nearby trips.",
+        "NSCameraUsageDescription": "Covoit.Africa uses the camera for profile photos and ID verification."
+      }
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FAF6F1"
       },
-      "package": "com.covoitafrica.app"
+      "package": "com.covoitafrica.app",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/YOUR_EAS_PROJECT_ID"
     }
   }
 }

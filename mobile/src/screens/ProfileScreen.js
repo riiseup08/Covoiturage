@@ -82,7 +82,7 @@ export default function ProfileScreen() {
           {p.avg_rating && (
             <View style={styles.ratingRow}>
               <Ionicons name="star" size={16} color={Colors.star} />
-              <Text style={styles.ratingText}>{p.avg_rating}/5 ({p.review_count} avis)</Text>
+              <Text style={styles.ratingText}>{p.avg_rating}/5 ({p.review_count} {t('reviews')})</Text>
             </View>
           )}
         </View>

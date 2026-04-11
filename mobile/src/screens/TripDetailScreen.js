@@ -12,6 +12,7 @@ import { Colors, Spacing, Radius } from '../theme';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { useI18n } from '../i18n';
+import { formatCurrency } from '../utils/currency';
 
 export default function TripDetailScreen({ route, navigation }) {
   const { trip } = route.params;
@@ -74,7 +75,7 @@ export default function TripDetailScreen({ route, navigation }) {
           <DetailRow icon="calendar-outline" label={t('departureLabel')} value={formatDate(trip.date_depart)} />
           <DetailRow icon="time-outline" label={t('arrivalLabel')} value={formatDate(trip.date_arrivee)} />
           <DetailRow icon="people-outline" label={t('seats')} value={`${trip.places_disponibles}`} />
-          <DetailRow icon="pricetag-outline" label={t('pricePerSeatLabel')} value={`${trip.prix_par_place} ${trip.currency}`} />
+          <DetailRow icon="pricetag-outline" label={t('pricePerSeatLabel')} value={formatCurrency(trip.prix_par_place, trip.currency)} />
           <DetailRow icon="briefcase-outline" label={t('baggage')} value={trip.type_bagage_accepte} />
           {trip.women_only && <DetailRow icon="female" label={t('reservedForWomen')} value="Oui" color={Colors.female} />}
         </Card>

@@ -11,15 +11,17 @@ const { getApiUrl } = require('../config/env');
 
 describe('env config', () => {
   it('exports API URLs', () => {
-    expect(ENV.API_URL_WEB).toBe('http://localhost:8000/api');
-    expect(ENV.API_URL_NATIVE).toContain('/api');
+    expect(ENV.API_URL_PRODUCTION).toBe('https://api.covoitafrica.com/api');
+    expect(ENV.API_URL_WEB_DEV).toBe('http://localhost:8000/api');
+    expect(ENV.API_URL_NATIVE_DEV).toContain('/api');
   });
 
   it('exports cache TTL', () => {
-    expect(ENV.CACHE_TTL_MS).toBe(30 * 60 * 1000);
+    expect(ENV.CACHE_TTL_MS).toBe(24 * 60 * 60 * 1000);
   });
 
-  it('getApiUrl returns web URL for web platform', () => {
+  it('getApiUrl returns dev web URL in __DEV__ mode', () => {
+    // __DEV__ is true in test env, no EXPO_PUBLIC_API_URL set
     expect(getApiUrl()).toBe('http://localhost:8000/api');
   });
 });

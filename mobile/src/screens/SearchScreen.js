@@ -15,6 +15,7 @@ import TripCard from '../components/TripCard';
 import { voyages } from '../api/client';
 import { useI18n } from '../i18n';
 import { fetchWithCache } from '../utils/offline';
+import { formatCurrency } from '../utils/currency';
 
 export default function SearchScreen({ navigation }) {
   const { t } = useI18n();
@@ -84,7 +85,7 @@ export default function SearchScreen({ navigation }) {
               <Marker
                 coordinate={{ latitude: t.start_latitude, longitude: t.start_longitude }}
                 title={`D: ${t.ville_depart}`}
-                description={`${t.conducteur_username} · ${t.prix_par_place} ${t.currency}`}
+                description={`${t.conducteur_username} · ${formatCurrency(t.prix_par_place, t.currency)}`}
                 pinColor="orange"
               />
               <Marker

@@ -7,6 +7,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import { payments } from '../api/client';
 import { useI18n } from '../i18n';
+import { formatCurrency } from '../utils/currency';
 
 export default function PaymentScreen({ route, navigation }) {
   const { t } = useI18n();
@@ -66,7 +67,7 @@ export default function PaymentScreen({ route, navigation }) {
           </View>
           <View style={styles.amountRow}>
             <Text style={styles.amountLabel}>{t('totalToPay')}</Text>
-            <Text style={styles.amountValue}>{totalAmount.toLocaleString()} {currency}</Text>
+            <Text style={styles.amountValue}>{formatCurrency(totalAmount, currency)}</Text>
           </View>
         </Card>
 
@@ -122,7 +123,7 @@ export default function PaymentScreen({ route, navigation }) {
             <View style={styles.cashInfo}>
               <Ionicons name="information-circle" size={20} color={Colors.sun} />
               <Text style={styles.cashText}>
-                Le paiement en espèces sera confirmé par le conducteur lors du trajet.
+                {t('cashPaymentInfo')}
               </Text>
             </View>
           </Card>
@@ -130,7 +131,7 @@ export default function PaymentScreen({ route, navigation }) {
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <Button title={`${t('payNow')} - ${totalAmount.toLocaleString()} ${currency}`} onPress={handlePay} loading={loading} />
+        <Button title={`${t('payNow')} - ${formatCurrency(totalAmount, currency)}`} onPress={handlePay} loading={loading} />
 
         <View style={{ height: 30 }} />
       </View>

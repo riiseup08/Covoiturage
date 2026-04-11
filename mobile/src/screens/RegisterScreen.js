@@ -20,6 +20,15 @@ export default function RegisterScreen({ navigation }) {
       setError(t('fillRequired'));
       return;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email.trim())) {
+      setError(t('emailInvalid'));
+      return;
+    }
+    if (form.password.length < 8) {
+      setError(t('passwordTooShort'));
+      return;
+    }
     setLoading(true);
     setError('');
     try {

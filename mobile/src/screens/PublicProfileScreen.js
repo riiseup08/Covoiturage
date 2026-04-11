@@ -43,8 +43,8 @@ export default function PublicProfileScreen({ route }) {
             </View>
           )}
           <View style={styles.badges}>
-            {data.id_verified && <Badge label="✅ ID Vérifié" color={Colors.success} />}
-            {data.phone_verified && <Badge label="📱 Tél. Vérifié" color={Colors.success} />}
+            {data.id_verified && <Badge label={t('idVerified')} color={Colors.success} />}
+            {data.phone_verified && <Badge label={t('phoneVerified')} color={Colors.success} />}
           </View>
         </View>
 

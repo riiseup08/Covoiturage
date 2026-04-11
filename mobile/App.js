@@ -9,6 +9,7 @@ import { Colors } from './src/theme';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { I18nProvider, useI18n } from './src/i18n';
 import OfflineBanner from './src/components/OfflineBanner';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -96,16 +97,18 @@ function AppNavigator() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <I18nProvider>
-        <AuthProvider>
-          <NavigationContainer>
-            <OfflineBanner />
-            <AppNavigator />
-            <StatusBar style="dark" />
-          </NavigationContainer>
-        </AuthProvider>
-      </I18nProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <I18nProvider>
+          <AuthProvider>
+            <NavigationContainer>
+              <OfflineBanner />
+              <AppNavigator />
+              <StatusBar style="dark" />
+            </NavigationContainer>
+          </AuthProvider>
+        </I18nProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

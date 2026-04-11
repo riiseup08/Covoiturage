@@ -8,6 +8,7 @@ import { dashboard, voyages, demandes } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n';
 import { fetchWithCache } from '../utils/offline';
+import { formatCurrency } from '../utils/currency';
 
 export default function DashboardScreen({ navigation }) {
   const { user, logout } = useAuth();
@@ -102,7 +103,7 @@ export default function DashboardScreen({ navigation }) {
           {myTrips.map(t => (
             <Card key={t.id} style={styles.miniCard}>
               <Text style={styles.miniRoute}>{t.ville_depart} → {t.ville_arrivee}</Text>
-              <Text style={styles.miniDate}>{formatDate(t.date_depart)} · {t.prix_par_place} {t.currency}</Text>
+              <Text style={styles.miniDate}>{formatDate(t.date_depart)} · {formatCurrency(t.prix_par_place, t.currency)}</Text>
             </Card>
           ))}
         </View>

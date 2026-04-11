@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { getApiUrl } from '../config/env';
+import ENV from '../config/env';
 import logger from '../utils/logger';
 
 let SecureStore = null;
@@ -52,7 +53,7 @@ export function getToken() {
 }
 
 async function request(method, path, body = null, isPublic = false) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip' };
   if (!isPublic && _token) {
     headers['Authorization'] = `Token ${_token}`;
   }
@@ -61,25 +62,47 @@ async function request(method, path, body = null, isPublic = false) {
     config.body = JSON.stringify(body);
   }
   const url = `${BASE_URL}${path}`;
-  logger.debug('API', `${method} ${path}`);
-  const res = await fetch(url, config);
 
-  // Token expired — clear and notify
-  if (res.status === 401 && !isPublic) {
-    logger.warn('API', 'Token expired (401), clearing session');
-    await clearToken();
-    if (_onTokenExpired) _onTokenExpired();
-    throw new Error('Session expired');
-  }
+  let lastError;
+  for (let attempt = 0; attempt <= ENV.MAX_RETRIES; attempt++) {
+    if (attempt > 0) {
+      const delay = ENV.RETRY_DELAY_MS * Math.pow(2, attempt - 1);
+      logger.info('API', `Retry ${attempt}/${ENV.MAX_RETRIES} for ${method} ${path} after ${delay}ms`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+    try {
+      logger.debug('API', `${method} ${path}`);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), ENV.REQUEST_TIMEOUT_MS);
+      const res = await fetch(url, { ...config, signal: controller.signal });
+      clearTimeout(timeout);
 
-  if (res.status === 204) return null;
-  const data = await res.json();
-  if (!res.ok) {
-    const msg = data.error || data.detail || JSON.stringify(data);
-    logger.error('API', `${method} ${path} failed (${res.status})`, msg);
-    throw new Error(msg);
+      // Token expired — clear and notify
+      if (res.status === 401 && !isPublic) {
+        logger.warn('API', 'Token expired (401), clearing session');
+        await clearToken();
+        if (_onTokenExpired) _onTokenExpired();
+        throw new Error('Session expired');
+      }
+
+      if (res.status === 204) return null;
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = data.error || data.detail || JSON.stringify(data);
+        logger.error('API', `${method} ${path} failed (${res.status})`, msg);
+        throw new Error(msg);
+      }
+      return data;
+    } catch (e) {
+      lastError = e;
+      // Don't retry auth errors or client errors
+      if (e.message === 'Session expired' || (e.message && !e.message.includes('aborted') && !e.message.includes('network') && !e.message.includes('Failed to fetch'))) {
+        throw e;
+      }
+    }
   }
-  return data;
+  logger.error('API', `${method} ${path} failed after ${ENV.MAX_RETRIES + 1} attempts`, lastError?.message);
+  throw lastError;
 }
 
 // ─── Auth ─────────────────────────────────────────────────

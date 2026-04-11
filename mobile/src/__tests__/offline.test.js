@@ -36,8 +36,8 @@ describe('setCache / getCached', () => {
   });
 
   it('returns null for expired data', async () => {
-    // Manually insert expired data (31 min ago)
-    const expired = JSON.stringify({ data: 'old', timestamp: Date.now() - 31 * 60 * 1000 });
+    // Manually insert expired data (25 hours ago, TTL is 24h)
+    const expired = JSON.stringify({ data: 'old', timestamp: Date.now() - 25 * 60 * 60 * 1000 });
     store['@covoit_cache_expired'] = expired;
     const result = await getCached('expired');
     expect(result).toBeNull();

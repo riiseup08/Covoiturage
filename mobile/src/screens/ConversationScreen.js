@@ -26,7 +26,7 @@ export default function ConversationScreen({ route }) {
     }
   };
 
-  useEffect(() => { load(); const interval = setInterval(load, 10000); return () => clearInterval(interval); }, []);
+  useEffect(() => { load(); const interval = setInterval(load, 30000); return () => clearInterval(interval); }, []);
 
   const handleSend = async () => {
     const content = text.trim();
