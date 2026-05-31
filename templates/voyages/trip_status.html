@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Suivi de trajet — Covoit.Africa{% endblock %}
+
+{% block content %}
+<div class="header-card">
+  {% if invalid %}
+    <h1>Lien invalide</h1>
+    <p>Ce lien de suivi n'est plus valide.</p>
+  {% else %}
+    <h1>🛡️ Suivi de trajet</h1>
+    <p>Une personne vous a partagé le suivi de son trajet Covoit.Africa.</p>
+    <ul style="list-style:none;line-height:2;margin-top:16px;">
+      <li>🚗 {{ voyage.ville_depart }} → {{ voyage.ville_arrivee }}</li>
+      <li>📅 Départ : {{ voyage.date_depart|date:'l d F Y à H:i' }}</li>
+      <li>👤 Conducteur : {{ voyage.conducteur.get_full_name|default:voyage.conducteur.username }}
+        {% if voyage.conducteur.profile.id_verified %}<span title="Identité vérifiée">✅</span>{% endif %}
+      </li>
+      <li>🚙 Véhicule : {{ voyage.modele_voiture }} — {{ voyage.plaque_immatriculation }}</li>
+    </ul>
+    <p style="margin-top:20px;color:#666;font-size:14px;">
+      En cas d'urgence, contactez les services de secours locaux.
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

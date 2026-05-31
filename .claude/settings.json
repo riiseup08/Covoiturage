@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python manage.py check)",
+      "Bash(python -m pytest covoiturage/tests/test_authorization.py covoiturage/tests/test_api.py -q)",
+      "Bash(python -m pytest covoiturage/tests/test_safety.py covoiturage/tests/test_referrals.py covoiturage/tests/test_share.py covoiturage/tests/test_alerts.py -q)",
+      "Bash(python manage.py showmigrations covoiturage)"
+    ]
+  }
+}

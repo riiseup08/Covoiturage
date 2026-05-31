@@ -35,6 +35,23 @@ class Profile(models.Model):
     # Phone verification
     phone_verified = models.BooleanField(default=False)
 
+    # Safety
+    GENDER_CHOICES = [
+        ('', 'Non précisé'),
+        ('male', 'Homme'),
+        ('female', 'Femme'),
+        ('other', 'Autre'),
+    ]
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, default='')
+    emergency_contact_name = models.CharField(max_length=100, blank=True, default='')
+    emergency_contact_phone = models.CharField(max_length=20, blank=True, default='')
+
+    # Referral
+    referral_code = models.CharField(max_length=12, blank=True, default='', db_index=True)
+    referred_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='referrals'
+    )
+
     # Status & scoring
     verification_status = models.CharField(max_length=20, default='not_started')
     verification_notes = models.TextField(blank=True, default='')
@@ -46,16 +63,32 @@ class Profile(models.Model):
     def __str__(self):
         return f"Profil de {self.user.username}"
 
+    IMAGE_FIELDS = ('profile_photo', 'car_photo', 'id_photo', 'driver_license_photo')
+
+    @property
+    def is_female(self):
+        return self.gender == 'female'
+
+    @staticmethod
+    def generate_referral_code():
+        import secrets
+        alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'  # no ambiguous 0/O/1/I
+        while True:
+            code = ''.join(secrets.choice(alphabet) for _ in range(7))
+            if not Profile.objects.filter(referral_code=code).exists():
+                return code
+
     def save(self, *args, **kwargs):
-        # Compress images before saving
-        if self.profile_photo:
-            self.profile_photo = self.compress_image(self.profile_photo)
-        if self.car_photo:
-            self.car_photo = self.compress_image(self.car_photo)
-        if self.id_photo:
-            self.id_photo = self.compress_image(self.id_photo)
-        if self.driver_license_photo:
-            self.driver_license_photo = self.compress_image(self.driver_license_photo)
+        # Only compress images that were freshly assigned this save. An ImageField
+        # that is already committed to storage exposes a `_committed` flag; re-reading
+        # and re-encoding it on every save (e.g. on each login) would degrade quality
+        # cumulatively and waste CPU.
+        for field_name in self.IMAGE_FIELDS:
+            field = getattr(self, field_name)
+            if field and not getattr(field, '_committed', True):
+                setattr(self, field_name, self.compress_image(field))
+        if not self.referral_code:
+            self.referral_code = self.generate_referral_code()
         super().save(*args, **kwargs)
 
     def compress_image(self, image_field):
@@ -136,6 +169,12 @@ class Voyage(models.Model):
         help_text="Coché quand le trajet est terminé (masqué des recherches)"
     )
 
+    # Safety: women-only ride (offered only by female drivers, matched only to
+    # female passengers). See services.matching and services.trips.search_voyages.
+    women_only = models.BooleanField(
+        default=False, help_text="Trajet réservé aux femmes"
+    )
+
     def __str__(self):
         return f"Trajet de {self.conducteur.username}: {self.ville_depart} -> {self.ville_arrivee}"
 
@@ -145,6 +184,12 @@ class Demande(models.Model):
     ville_arrivee = models.CharField(max_length=100)
     date_voyage = models.DateField()
     places = models.PositiveIntegerField(default=1)
+
+    # Localisation (optionnelle) — alimente le matching par corridor
+    start_latitude = models.FloatField(blank=True, null=True)
+    start_longitude = models.FloatField(blank=True, null=True)
+    end_latitude = models.FloatField(blank=True, null=True)
+    end_longitude = models.FloatField(blank=True, null=True)
 
     def __str__(self):
         return f"Demande de {self.passager.username}: {self.ville_depart} -> {self.ville_arrivee}"
@@ -156,6 +201,18 @@ class Correspondance(models.Model):
     is_validated = models.BooleanField(default=False)
     refus_conducteur = models.BooleanField(default=False, help_text="Le conducteur a refusé ce match")
     refus_passager = models.BooleanField(default=False, help_text="Le passager a annulé son intérêt")
+
+    # Escrow Mobile Money: la course est payée à la validation et libérée au conducteur
+    # une fois la prise en charge et la dépose confirmées par les deux parties.
+    PAYMENT_STATUS_CHOICES = [
+        ('none', 'Aucun paiement'),
+        ('held', 'Fonds bloqués (escrow)'),
+        ('released', 'Versé au conducteur'),
+        ('refunded', 'Remboursé au passager'),
+    ]
+    payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='none')
+    escrow_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    escrow_reference = models.CharField(max_length=100, blank=True, help_text="Référence du paiement Mobile Money")
 
     def __str__(self):
         return f"Match: {self.voyage} <-> {self.demande}"
@@ -270,6 +327,7 @@ class Transaction(models.Model):
         ('topup', 'Rechargement (Monetbil)'),
         ('commission', 'Commission plateforme'),
         ('refund', 'Remboursement'),
+        ('referral', 'Bonus de parrainage'),
     ]
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=12, decimal_places=2)
@@ -284,3 +342,45 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount} {self.wallet.currency}"
+
+
+class RouteAlert(models.Model):
+    """A saved search: notify the user when a trip on this route is published."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='route_alerts')
+    ville_depart = models.CharField(max_length=100)
+    ville_arrivee = models.CharField(max_length=100)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['active', 'ville_depart', 'ville_arrivee'])]
+
+    def __str__(self):
+        return f"Alerte {self.user.username}: {self.ville_depart} -> {self.ville_arrivee}"
+
+
+class RecurringTrip(models.Model):
+    """Template for a weekly commute; materialized into Voyage rows by a command."""
+    WEEKDAYS = [
+        (0, 'Lundi'), (1, 'Mardi'), (2, 'Mercredi'), (3, 'Jeudi'),
+        (4, 'Vendredi'), (5, 'Samedi'), (6, 'Dimanche'),
+    ]
+    conducteur = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recurring_trips')
+    ville_depart = models.CharField(max_length=100)
+    lieu_ramassage = models.CharField(max_length=200, blank=True, default='')
+    ville_arrivee = models.CharField(max_length=100)
+    weekday = models.PositiveSmallIntegerField(choices=WEEKDAYS)
+    heure_depart = models.TimeField()
+    duree_minutes = models.PositiveIntegerField(default=240, help_text="Durée estimée du trajet")
+    places_disponibles = models.PositiveIntegerField(default=1)
+    prix_par_place = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    plaque_immatriculation = models.CharField(max_length=20, blank=True, default='')
+    modele_voiture = models.CharField(max_length=100, blank=True, default='')
+    type_bagage_accepte = models.CharField(max_length=10, default='moyen')
+    women_only = models.BooleanField(default=False)
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Récurrent {self.conducteur.username}: {self.ville_depart} -> {self.ville_arrivee} ({self.get_weekday_display()})"

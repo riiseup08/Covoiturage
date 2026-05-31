@@ -11,6 +11,7 @@ mobile/web-build/
 # Environment & secrets
 .env
 .env.local
+.env.production
 
 # OS files
 .DS_Store
@@ -20,11 +21,45 @@ Thumbs.db
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+env/
+venv/
+.venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # Logs
 npm-debug.log*
 *.log
+logs/
+
+# Database
+*.sqlite3
+
+# Media uploads
+media/
+
+# Static files (collect in production)
+staticfiles/
+
+# Coverage reports
+coverage/
+htmlcov/
+
+# Redis
+dump.rdb

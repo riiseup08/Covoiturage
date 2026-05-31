@@ -55,7 +55,8 @@ export function getToken() {
 async function request(method, path, body = null, isPublic = false) {
   const headers = { 'Content-Type': 'application/json', 'Accept-Encoding': 'gzip' };
   if (!isPublic && _token) {
-    headers['Authorization'] = `Token ${_token}`;
+    // Backend authenticates with SimpleJWT (Bearer), not DRF TokenAuth.
+    headers['Authorization'] = `Bearer ${_token}`;
   }
   const config = { method, headers };
   if (body) {
@@ -117,9 +118,9 @@ export const auth = {
 
 // ─── Profile ──────────────────────────────────────────────
 export const profile = {
-  me: () => request('GET', '/profile/'),
-  update: (data) => request('PATCH', '/profile/update/', data),
-  public: (username) => request('GET', `/profile/${username}/`),
+  me: () => request('GET', '/profiles/me/'),
+  update: (data) => request('PATCH', '/profiles/me/', data),
+  public: (username) => request('GET', `/profiles/?search=${encodeURIComponent(username)}`, null, true),
 };
 
 // ─── Voyages ──────────────────────────────────────────────
@@ -129,43 +130,44 @@ export const voyages = {
     return request('GET', `/voyages/search/?${qs}`, null, true);
   },
   mine: () => request('GET', '/voyages/mine/'),
-  create: (data) => request('POST', '/voyages/create/', data),
-  update: (id, data) => request('PATCH', `/voyages/${id}/update/`, data),
-  delete: (id) => request('DELETE', `/voyages/${id}/delete/`),
+  create: (data) => request('POST', '/voyages/', data),
+  update: (id, data) => request('PATCH', `/voyages/${id}/`, data),
+  delete: (id) => request('DELETE', `/voyages/${id}/`),
   markTermine: (id) => request('POST', `/voyages/${id}/termine/`),
 };
 
 // ─── Demandes ─────────────────────────────────────────────
 export const demandes = {
-  mine: () => request('GET', '/demandes/mine/'),
-  create: (data) => request('POST', '/demandes/create/', data),
-  delete: (id) => request('DELETE', `/demandes/${id}/delete/`),
+  mine: () => request('GET', '/demandes/'), // list is already scoped to the user
+  create: (data) => request('POST', '/demandes/', data),
+  delete: (id) => request('DELETE', `/demandes/${id}/`),
 };
 
-// ─── Matches ──────────────────────────────────────────────
+// ─── Matches (correspondances) ─────────────────────────────
 export const matches = {
-  mine: () => request('GET', '/matches/'),
-  validate: (id) => request('POST', `/matches/${id}/validate/`),
-  refuse: (id) => request('POST', `/matches/${id}/refuse/`),
+  mine: () => request('GET', '/correspondances/'),
+  validate: (id) => request('POST', `/correspondances/${id}/validate/`),
+  refuse: (id) => request('POST', `/correspondances/${id}/refuse/`),
 };
 
-// ─── Reviews ──────────────────────────────────────────────
+// ─── Reviews (avis) ────────────────────────────────────────
 export const reviews = {
-  mine: () => request('GET', '/reviews/'),
-  create: (data) => request('POST', '/reviews/create/', data),
+  mine: () => request('GET', '/avis/'),
+  create: (data) => request('POST', '/avis/', data),
 };
 
 // ─── Notifications ────────────────────────────────────────
 export const notifications = {
   list: () => request('GET', '/notifications/'),
-  markRead: (id) => request('POST', `/notifications/${id}/read/`),
-  markAllRead: () => request('POST', '/notifications/read-all/'),
+  markRead: (id) => request('POST', `/notifications/${id}/mark_read/`),
+  markAllRead: () => request('POST', '/notifications/mark_all_read/'),
 };
 
 // ─── Messaging ────────────────────────────────────────────
 export const messaging = {
-  conversation: (id) => request('GET', `/conversation/${id}/`),
-  send: (id, content) => request('POST', `/conversation/${id}/send/`, { content }),
+  conversation: (correspondanceId) => request('GET', `/correspondances/${correspondanceId}/messages/`),
+  send: (correspondanceId, content) =>
+    request('POST', `/correspondances/${correspondanceId}/messages/`, { content }),
 };
 
 // ─── Dashboard ────────────────────────────────────────────
@@ -173,18 +175,42 @@ export const dashboard = {
   stats: () => request('GET', '/dashboard/'),
 };
 
-// ─── Payments ─────────────────────────────────────────────
+// ─── Payments (Mobile-Money escrow on a match) ─────────────
 export const payments = {
-  mine: () => request('GET', '/payments/'),
-  create: (data) => request('POST', '/payments/create/', data),
-  confirm: (id) => request('POST', `/payments/${id}/confirm/`),
+  // Passenger pays the fare into escrow for a validated match.
+  create: (data) =>
+    request('POST', `/correspondances/${data.correspondance_id}/pay/`, {
+      phone: data.phone_number,
+      provider: data.provider,
+    }),
+  // Passenger cancels before pickup → refund.
+  refund: (correspondanceId) => request('POST', `/correspondances/${correspondanceId}/refund/`),
 };
 
 // ─── Wallet (Driver Commission) ────────────────────────────
 export const wallet = {
-  balance: () => request('GET', '/wallet/balance/'),
-  requestTopup: (data) => request('POST', '/wallet/topup/request/', data),
-  confirmTopup: (id) => request('POST', `/wallet/topup/${id}/confirm/`),
-  transactions: () => request('GET', '/wallet/transactions/'),
+  // Backend returns balance + transactions together at /wallet/.
+  balance: () => request('GET', '/wallet/'),
+  transactions: () => request('GET', '/wallet/'),
+};
+
+// ─── Safety (SOS / live-trip-share) ────────────────────────
+export const safety = {
+  share: (correspondanceId) => request('POST', `/correspondances/${correspondanceId}/share/`),
+  sos: (correspondanceId) => request('POST', `/correspondances/${correspondanceId}/sos/`),
+};
+
+// ─── Saved-route alerts ────────────────────────────────────
+export const routeAlerts = {
+  list: () => request('GET', '/route-alerts/'),
+  create: (data) => request('POST', '/route-alerts/', data),
+  delete: (id) => request('DELETE', `/route-alerts/${id}/`),
+};
+
+// ─── Recurring trips (weekly commutes) ─────────────────────
+export const recurringTrips = {
+  list: () => request('GET', '/recurring-trips/'),
+  create: (data) => request('POST', '/recurring-trips/', data),
+  delete: (id) => request('DELETE', `/recurring-trips/${id}/`),
 };
 

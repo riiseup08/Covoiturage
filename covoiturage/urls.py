@@ -11,6 +11,9 @@ urlpatterns = [
     path('dashboard/', views.home_view, name='dashboard'),
     path('search/', views.search_trajets, name='search_trajets'),
     path('accounts/register/', views.register_view, name='register'),
+    path('accounts/phone/register/', views.register_view, name='phone_register'),
+    path('accounts/phone/login/', views.register_view, name='phone_login'),
+    path('accounts/phone/resend/', views.register_view, name='phone_resend_otp'),
     
     path('profile/', views.profile_view, name='profile'),
     path('profile/<str:username>/', views.public_profile_view, name='public_profile'),
@@ -40,4 +43,12 @@ urlpatterns = [
     
     # Messagerie
     path('conversation/<int:correspondance_id>/', views.conversation_view, name='conversation'),
+
+    # Sécurité (SOS / partage de trajet)
+    path('trip/<int:correspondance_id>/share/', views.share_trip_view, name='share_trip'),
+    path('trip/<int:correspondance_id>/sos/', views.sos_view, name='sos'),
+    path('trip-status/<str:token>/', views.trip_status_view, name='trip_status'),
+
+    # Page publique partageable (WhatsApp)
+    path('t/<int:voyage_id>/', views.public_voyage_view, name='public_voyage'),
 ]

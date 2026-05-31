@@ -102,7 +102,7 @@ describe('API request', () => {
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: 'Token my_token',
+          Authorization: 'Bearer my_token',
         }),
       })
     );

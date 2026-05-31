@@ -14,6 +14,8 @@ from geopy.exc import GeocoderServiceError
 from .models import Voyage, Demande, Correspondance, Profile, Avis, Notification, Message, Wallet, Transaction
 from .forms import VoyageForm, DemandeForm, ProfileForm, AvisForm, UserRegistrationForm, MessageForm
 from .notifications import get_unread_count, mark_all_read
+from .services import trips as trips_service
+from .services.reviews import can_review
 
 PAGE_SIZE = 10
 SEARCH_PAGE_SIZE = 12
@@ -29,6 +31,20 @@ def landing_view(request):
     return render(request, 'voyages/landing.html')
 
 
+def public_voyage_view(request, voyage_id):
+    """Public, shareable trip page (the target of WhatsApp / SMS share links).
+
+    Shows trip details without third-party contact PII, with a CTA to sign up.
+    404 for terminated/full trips so dead links don't surface stale rides.
+    """
+    voyage = Voyage.objects.select_related('conducteur', 'conducteur__profile').filter(
+        id=voyage_id, est_termine=False, places_disponibles__gte=1
+    ).first()
+    if voyage is None:
+        return render(request, 'voyages/public_voyage.html', {'invalid': True}, status=404)
+    return render(request, 'voyages/public_voyage.html', {'invalid': False, 'voyage': voyage})
+
+
 def custom_404(request, exception=None):
     # Évite de bloquer l'utilisateur sur une page 404.
     # Redirige vers le tableau de bord si connecté, sinon vers l'accueil.
@@ -42,8 +58,15 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            code = form.cleaned_data.get('referral_code')
+            if code:
+                from .services.referrals import apply_referral, ReferralError
+                try:
+                    apply_referral(user, code)
+                except ReferralError:
+                    pass  # invalid code shouldn't block signup
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-            return redirect('covoiturage:dashboard')  
+            return redirect('covoiturage:dashboard')
     else:
         form = UserRegistrationForm()
     return render(request, 'registration/register.html', {'form': form})
@@ -126,26 +149,23 @@ def public_profile_view(request, username):
 
 @login_required
 def add_voyage(request):
+    is_female = getattr(getattr(request.user, 'profile', None), 'is_female', False)
     if request.method == 'POST':
-        form = VoyageForm(request.POST)
+        form = VoyageForm(request.POST, user=request.user)
         if form.is_valid():
-            voyage = form.save(commit=False)
-            voyage.conducteur = request.user
-            voyage.save()
+            trips_service.publish_voyage(request.user, **form.cleaned_data)
             messages.success(request, 'Votre trajet a été publié avec succès.')
             return redirect('covoiturage:dashboard')
     else:
-        form = VoyageForm()
-    return render(request, 'voyages/add_voyage.html', {'form': form})
+        form = VoyageForm(user=request.user)
+    return render(request, 'voyages/add_voyage.html', {'form': form, 'is_female': is_female})
 
 @login_required
 def add_demande(request):
     if request.method == 'POST':
         form = DemandeForm(request.POST)
         if form.is_valid():
-            demande = form.save(commit=False)
-            demande.passager = request.user
-            demande.save()
+            trips_service.publish_demande(request.user, **form.cleaned_data)
             messages.success(request, 'Votre demande a été publiée avec succès.')
             return redirect('covoiturage:dashboard')
     else:
@@ -155,15 +175,16 @@ def add_demande(request):
 @login_required
 def edit_voyage(request, voyage_id):
     voyage = get_object_or_404(Voyage, id=voyage_id, conducteur=request.user)
+    is_female = getattr(getattr(request.user, 'profile', None), 'is_female', False)
     if request.method == 'POST':
-        form = VoyageForm(request.POST, instance=voyage)
+        form = VoyageForm(request.POST, instance=voyage, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Trajet modifié avec succès.')
             return redirect('covoiturage:dashboard')
     else:
-        form = VoyageForm(instance=voyage)
-    return render(request, 'voyages/edit_voyage.html', {'form': form})
+        form = VoyageForm(instance=voyage, user=request.user)
+    return render(request, 'voyages/edit_voyage.html', {'form': form, 'is_female': is_female})
 
 @login_required
 def delete_voyage(request, voyage_id):
@@ -240,37 +261,14 @@ def mark_voyage_termine(request, voyage_id):
     voyage = get_object_or_404(Voyage, id=voyage_id, conducteur=request.user)
     if request.method == 'POST':
         if not voyage.est_termine:
-            voyage.est_termine = True
-            voyage.save()
-            
-            # Calcul de la commission (10% du prix total par place vendue)
-            # On compte le nombre de passagers validés
-            passagers_count = Correspondance.objects.filter(
-                voyage=voyage, is_validated=True, refus_conducteur=False, refus_passager=False
-            ).count()
-            
-            if passagers_count > 0:
-                total_prix = voyage.prix_par_place * passagers_count
-                commission = total_prix * 0.10 # 10% commission
-                
-                if commission > 0:
-                    wallet, _ = Wallet.objects.get_or_create(user=request.user)
-                    wallet.balance -= commission
-                    wallet.save()
-                    
-                    Transaction.objects.create(
-                        wallet=wallet,
-                        amount=-commission,
-                        transaction_type='commission',
-                        description=f"Commission pour le trajet {voyage.ville_depart} -> {voyage.ville_arrivee} ({passagers_count} passagers)",
-                        related_voyage=voyage
-                    )
-                    messages.success(request, f"Trajet terminé. Commission de {commission} FCFA déduite de votre crédit.")
-                else:
-                    messages.success(request, "Trajet marqué comme terminé.")
+            commission = trips_service.complete_voyage(request.user, voyage)
+            if commission > 0:
+                messages.success(
+                    request,
+                    f"Trajet terminé. Commission de {commission} FCFA déduite de votre crédit.",
+                )
             else:
-                messages.success(request, "Trajet marqué comme terminé (aucun passager validé).")
-        
+                messages.success(request, "Trajet marqué comme terminé.")
         return redirect('covoiturage:dashboard')
     return redirect('covoiturage:dashboard')
 
@@ -332,16 +330,16 @@ def geocode_reverse(request):
 @login_required
 def search_trajets(request):
     """Recherche de trajets avec filtres et pagination."""
-    voyages = Voyage.objects.filter(
-        date_depart__gte=timezone.now(),
-        places_disponibles__gte=1,
-        est_termine=False
-    ).exclude(conducteur=request.user).select_related('conducteur').order_by('date_depart')
+    # Delegate filtering (incl. women-only visibility) to the shared service.
+    voyages = trips_service.search_voyages(request.GET, user=request.user).exclude(
+        conducteur=request.user
+    )
 
     ville_depart = request.GET.get('ville_depart', '').strip()
     ville_arrivee = request.GET.get('ville_arrivee', '').strip()
     date_str = request.GET.get('date', '').strip()
     type_bagage = request.GET.get('type_bagage', '').strip()
+    women_only = request.GET.get('women_only', '').strip()
     try:
         prix_max = request.GET.get('prix_max')
         prix_max = int(prix_max) if prix_max else None
@@ -353,24 +351,6 @@ def search_trajets(request):
     except ValueError:
         places_min = None
 
-    if ville_depart:
-        voyages = voyages.filter(ville_depart__icontains=ville_depart)
-    if ville_arrivee:
-        voyages = voyages.filter(ville_arrivee__icontains=ville_arrivee)
-    if date_str:
-        try:
-            from datetime import datetime
-            search_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            voyages = voyages.filter(date_depart__date=search_date)
-        except ValueError:
-            pass
-    if type_bagage and type_bagage in dict(Voyage.BAGAGE_CHOICES):
-        voyages = voyages.filter(type_bagage_accepte=type_bagage)
-    if prix_max is not None:
-        voyages = voyages.filter(prix_par_place__lte=prix_max)
-    if places_min is not None:
-        voyages = voyages.filter(places_disponibles__gte=places_min)
-
     paginator = Paginator(voyages, SEARCH_PAGE_SIZE)
     page = request.GET.get('page', 1)
     page_obj = paginator.get_page(page)
@@ -381,6 +361,7 @@ def search_trajets(request):
         'ville_arrivee': ville_arrivee,
         'date': date_str,
         'type_bagage': type_bagage,
+        'women_only': women_only,
         'prix_max': prix_max,
         'places_min': places_min,
         'Voyage': Voyage,
@@ -432,26 +413,9 @@ def add_avis_view(request, voyage_id, user_id):
     """Déposer un avis pour un trajet terminé (sur l'autre participant)."""
     voyage = get_object_or_404(Voyage, id=voyage_id, est_termine=True)
     utilisateur_note = get_object_or_404(User, id=user_id)
-    if request.user.id == utilisateur_note.id:
-        messages.error(request, "Vous ne pouvez pas vous noter vous-même.")
-        return redirect('covoiturage:avis_list')
-    # Vérifier que request.user a bien participé à ce trajet avec utilisateur_note
-    can_rate = False
-    if voyage.conducteur == request.user:
-        can_rate = Correspondance.objects.filter(
-            voyage=voyage, demande__passager=utilisateur_note,
-            is_validated=True, refus_conducteur=False, refus_passager=False
-        ).exists()
-    elif voyage.conducteur == utilisateur_note:
-        can_rate = Correspondance.objects.filter(
-            voyage=voyage, demande__passager=request.user,
-            is_validated=True, refus_conducteur=False, refus_passager=False
-        ).exists()
-    if not can_rate:
-        messages.error(request, "Vous ne pouvez pas noter cette personne pour ce trajet.")
-        return redirect('covoiturage:avis_list')
-    if Avis.objects.filter(voyage=voyage, auteur=request.user, utilisateur_note=utilisateur_note).exists():
-        messages.warning(request, "Vous avez déjà laissé un avis pour cette personne sur ce trajet.")
+    ok, reason = can_review(request.user, voyage, utilisateur_note)
+    if not ok:
+        messages.error(request, reason)
         return redirect('covoiturage:avis_list')
     if request.method == 'POST':
         form = AvisForm(request.POST)
@@ -558,3 +522,50 @@ def conversation_view(request, correspondance_id):
         'form': form,
     }
     return render(request, 'voyages/conversation.html', context)
+
+
+# ================== SAFETY (SOS / TRIP SHARE) ==================
+
+@login_required
+def share_trip_view(request, correspondance_id):
+    """SMS the user's emergency contact a link to follow this trip."""
+    from .services import safety
+    correspondance = get_object_or_404(Correspondance, id=correspondance_id)
+    if request.method == 'POST':
+        try:
+            phone = safety.share_trip(correspondance, request.user)
+            messages.success(request, f"Trajet partagé avec votre contact d'urgence ({phone}).")
+        except safety.SafetyError as exc:
+            messages.error(request, str(exc))
+    return redirect('covoiturage:conversation', correspondance_id=correspondance_id)
+
+
+@login_required
+def sos_view(request, correspondance_id):
+    """Trigger an SOS alert to the user's emergency contact."""
+    from .services import safety
+    correspondance = get_object_or_404(Correspondance, id=correspondance_id)
+    if request.method == 'POST':
+        try:
+            phone = safety.sos(correspondance, request.user)
+            messages.warning(request, f"Alerte SOS envoyée à votre contact d'urgence ({phone}).")
+        except safety.SafetyError as exc:
+            messages.error(request, str(exc))
+    return redirect('covoiturage:conversation', correspondance_id=correspondance_id)
+
+
+def trip_status_view(request, token):
+    """Public, read-only trip-follow page (opened from a share/SOS SMS link)."""
+    from .services import safety
+    correspondance_id = safety.read_trip_token(token)
+    correspondance = None
+    if correspondance_id is not None:
+        correspondance = Correspondance.objects.select_related(
+            'voyage', 'voyage__conducteur', 'demande', 'demande__passager'
+        ).filter(id=correspondance_id).first()
+    if correspondance is None:
+        return render(request, 'voyages/trip_status.html', {'invalid': True}, status=404)
+    return render(request, 'voyages/trip_status.html', {
+        'invalid': False,
+        'voyage': correspondance.voyage,
+    })

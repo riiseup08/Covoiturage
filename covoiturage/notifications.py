@@ -36,8 +36,25 @@ def create_notification(user, notification_type, title, message, related_voyage=
     
     if send_email and user.email:
         send_notification_email(user, notification)
-    
+
+    if getattr(settings, "USSD_ENABLED", False):
+        send_notification_sms(user, notification)
+
     return notification
+
+
+def send_notification_sms(user, notification):
+    """Send the notification as an SMS so feature-phone users are reached too."""
+    phone = (getattr(getattr(user, "profile", None), "phone", "") or "").strip()
+    if not phone:
+        return
+    from .messaging_gateway import get_gateway
+
+    text = f"Covoit.Africa: {notification.title}. {notification.message}"[:320]
+    try:
+        get_gateway().send_sms(phone, text)
+    except Exception:
+        pass
 
 
 def send_notification_email(user, notification):

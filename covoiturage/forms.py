@@ -12,6 +12,11 @@ class UserRegistrationForm(UserCreationForm):
         label="Adresse email",
         widget=forms.EmailInput(attrs={'placeholder': 'exemple@email.com', 'autocomplete': 'email'})
     )
+    referral_code = forms.CharField(
+        required=False,
+        label="Code de parrainage (optionnel)",
+        widget=forms.TextInput(attrs={'placeholder': 'Ex: ABC1234'})
+    )
 
     class Meta:
         model = User
@@ -46,6 +51,7 @@ class VoyageForm(forms.ModelForm):
             'ville_depart', 'lieu_ramassage', 'ville_arrivee',
             'date_depart', 'date_arrivee', 'places_disponibles', 'prix_par_place',
             'plaque_immatriculation', 'modele_voiture', 'type_bagage_accepte',
+            'women_only',
         ]
         widgets = {
             'date_depart': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
@@ -56,8 +62,20 @@ class VoyageForm(forms.ModelForm):
             'type_bagage_accepte': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def __init__(self, *args, user=None, **kwargs):
+        self._user = user
+        super().__init__(*args, **kwargs)
+
     def clean(self):
         cleaned_data = super().clean()
+        # Only a female driver may offer a women-only ride.
+        if cleaned_data.get('women_only') and self._user is not None:
+            profile = getattr(self._user, 'profile', None)
+            if not (profile and profile.is_female):
+                self.add_error(
+                    'women_only',
+                    "Seules les conductrices peuvent proposer un trajet réservé aux femmes.",
+                )
         date_depart = cleaned_data.get("date_depart")
         date_arrivee = cleaned_data.get("date_arrivee")
         places_disponibles = cleaned_data.get("places_disponibles")
@@ -107,9 +125,14 @@ class DemandeForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['bio', 'phone', 'is_driver', 'profile_photo']
+        fields = [
+            'bio', 'phone', 'is_driver', 'profile_photo',
+            'gender', 'emergency_contact_name', 'emergency_contact_phone',
+        ]
         widgets = {
             'profile_photo': forms.FileInput(attrs={'accept': 'image/*'}),
+            'emergency_contact_name': forms.TextInput(attrs={'placeholder': "Ex: Marie (sœur)"}),
+            'emergency_contact_phone': forms.TextInput(attrs={'placeholder': 'Ex: 6XX XX XX XX'}),
         }
 
 

@@ -6,3 +6,25 @@ pillow==12.1.1
 sqlparse==0.5.5
 tzdata==2025.3
 geopy==2.4.1
+
+# API & REST
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.5.0
+django-cors-headers==4.7.0
+
+# Testing
+pytest==8.3.5
+pytest-django==4.10.0
+pytest-cov==6.1.1
+factory-boy==3.3.1
+pytest-xdist==3.6.1
+
+# Production
+django-redis==5.4.0
+redis==5.2.1
+python-dotenv==1.0.1
+dj-database-url==2.3.0
+
+# Security
+django-ratelimit==4.1.0
+bleach==6.2.0

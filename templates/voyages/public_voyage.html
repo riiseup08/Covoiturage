@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{% if invalid %}Trajet indisponible{% else %}{{ voyage.ville_depart }} → {{ voyage.ville_arrivee }}{% endif %} — Covoit.Africa{% endblock %}
+
+{% block meta %}
+{% if not invalid %}
+<meta property="og:title" content="Trajet {{ voyage.ville_depart }} → {{ voyage.ville_arrivee }} — Covoit.Africa">
+<meta property="og:description" content="Le {{ voyage.date_depart|date:'d/m/Y à H:i' }} · {{ voyage.prix_par_place|floatformat:0 }} FCFA/place. Rejoignez ce trajet sur Covoit.Africa.">
+<meta name="description" content="Covoiturage {{ voyage.ville_depart }} → {{ voyage.ville_arrivee }} sur Covoit.Africa.">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="header-card">
+  {% if invalid %}
+    <h1>Trajet indisponible</h1>
+    <p>Ce trajet n'est plus disponible (complet ou terminé).</p>
+    <p style="margin-top:20px;"><a href="{% url 'covoiturage:landing' %}">← Découvrir Covoit.Africa</a></p>
+  {% else %}
+    <h1>🚗 {{ voyage.ville_depart }} → {{ voyage.ville_arrivee }}</h1>
+    <p style="font-size:20px;font-weight:700;color:var(--color-earth);margin:10px 0;">
+      {{ voyage.prix_par_place|floatformat:0 }} FCFA / place
+    </p>
+    <ul style="list-style:none;line-height:2;">
+      <li>📅 {{ voyage.date_depart|date:'l d F Y à H:i' }}</li>
+      {% if voyage.lieu_ramassage %}<li>📍 Ramassage : {{ voyage.lieu_ramassage }}</li>{% endif %}
+      <li>💺 {{ voyage.places_disponibles }} place(s) disponible(s)</li>
+      <li>🚙 {{ voyage.modele_voiture }}</li>
+      <li>👤 Conducteur : {{ voyage.conducteur.username }}
+        {% if voyage.conducteur.profile.id_verified %}<span title="Identité vérifiée">✅</span>{% endif %}
+      </li>
+      {% if voyage.women_only %}<li>👩 Trajet réservé aux femmes</li>{% endif %}
+    </ul>
+    <p style="margin-top:24px;">
+      <a href="{% url 'covoiturage:register' %}" style="display:inline-block;background:var(--color-earth);color:#fff;padding:14px 28px;border-radius:10px;font-weight:700;text-decoration:none;">
+        Réserver ce trajet sur Covoit.Africa
+      </a>
+    </p>
+  {% endif %}
+</div>
+{% endblock %}
